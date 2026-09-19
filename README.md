@@ -1,20 +1,24 @@
 # Penumbra
 
-Penumbra is a personalized movie recommendation system designed to learn what individual users enjoy and produce ranked movie recommendations tailored to their taste.
+Penumbra (https://www.penumbra.mov) is a personalized movie recommendation system designed to learn what individual users enjoy and return ranked movie recommendations tailored to their taste.
 
-The project focuses on building an understandable, testable, and modular recommendation engine that combines multiple sources of evidence about users and movies.
+The project is built around three cooperating recommendation components:
 
-## Recommendation System
+- Content-based recommendation
+- Collaborative filtering
+- Hybrid / reranking
 
-Penumbra's recommendation architecture is built around three cooperating components:
+The goal is not simply to combine as many models as possible. Penumbra keeps model changes only when they are understandable, testable, and supported by held-out evaluation.
 
-### Content-Based Recommendation
+---
 
-Models a user's preferences from properties of movies they have previously rated.
+# Recommendation System
 
-The content system learns a user taste profile from movie metadata and produces personalized movie predictions together with confidence and reason signals.
+## Content-Based Recommendation
 
-Current content features include signals such as:
+The content system models a user's preferences from properties of movies they have previously rated.
+
+It builds a reusable user taste profile and predicts preference for unseen movies using metadata such as:
 
 - Genre
 - Director
@@ -23,43 +27,79 @@ Current content features include signals such as:
 - Language
 - User rating history
 
-### Collaborative Filtering
+The content model also produces confidence and reason signals so predictions can reflect how much evidence actually supports them.
 
-Learns from rating behavior across users to identify movies a user may enjoy based on population-level preference patterns.
+---
 
-The collaborative system includes matrix factorization, which learns latent representations of users and movies from historical ratings. It also handles sparse data and produces confidence estimates based on available evidence.
+## Collaborative Filtering
 
-### Hybrid / Reranking
+The collaborative system learns from rating behavior across users.
 
-Combines recommendation signals into a final personalized ranking.
+Its primary model is biased matrix factorization, which learns:
 
-The hybrid system uses learned pairwise ranking to determine which movies should appear above others for a user. It can incorporate signals from:
+- Global rating behavior
+- User biases
+- Movie biases
+- Latent user factors
+- Latent movie factors
 
-- Content-based predictions
-- Collaborative predictions
-- Personal preference scores
+These learned representations allow the system to estimate how strongly a user may prefer an unseen movie based on population-level behavior.
+
+The collaborative model includes:
+
+- confidence-aware predictions
+- explicit sparse-user handling
+- explicit unknown-user and unknown-movie behavior
+- batch prediction
+- model persistence and loading
+
+---
+
+## Hybrid / Reranking
+
+The hybrid layer determines the final ordering of candidate movies.
+
+Penumbra supports multiple ranking configurations using signals such as:
+
+- Personal preference
+- Content-model prediction
+- Collaborative prediction
 - Movie quality
 - Movie popularity
 
-Hybrid architectures are evaluated against standalone models and frozen baselines before being adopted.
+The strongest currently validated ranking model uses:
 
-Detailed methodology, experiments, benchmarks, and ablation results are documented in `docs/hybrid-reranking.md`.
+`Personal + Quality + Popularity → Pairwise Logistic Regression`
 
-## Architecture
+Week 3 also integrated real content and collaborative predictions into experimental hybrid rerankers.
 
-The recommendation system follows the general pipeline:
+Those experiments successfully produced a full multi-model architecture, but they did not outperform the simpler existing learned reranker on held-out evaluation.
+
+Those experiments successfully produced an integrated multi-model architecture, but they did not outperform the simpler existing learned reranker on held-out evaluation.
+
+Detailed ranking methodology, experiments, ablations, and benchmark history are documented in:
+
+`docs/hybrid-reranking.md`
+
+---
+
+# Final Recommendation Pipeline
+
+The current single-user Penumbra recommendation flow is:
 
 ```text
-                    ┌─────────────────┐
-User Ratings ──────►│ Content Model   │──────┐
-                    └─────────────────┘      │
-                                             ▼
-                                      ┌───────────────┐
-                                      │ Hybrid        │
-                                      │ Reranker      │──► Ranked Movies
-                                      └───────────────┘
-                                             ▲
-                    ┌─────────────────┐      │
-Rating Data ───────►│ Collaborative   │──────┘
-                    │ Model           │
-                    └─────────────────┘
+User Ratings
+    ↓
+Generate unseen movie candidates
+    ↓
+Personal preference + movie quality + popularity
+    ↓
+Pairwise logistic-regression reranker
+    ↓
+Rank candidates by learned relevance
+    ↓
+Retain larger high-relevance candidate pool
+    ↓
+Genre-based diversity reranking
+    ↓
+Final Top-K recommendations

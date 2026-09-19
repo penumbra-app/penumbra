@@ -209,7 +209,9 @@ This prevents the recommendation list from becoming unnecessarily repetitive.
 
 This diversity step is currently part of `recommend_by_genre`.
 
-The learned recommendation path does not yet apply this diversity reranker after ML ranking.
+This diversity step is specific to the older heuristic recommender.
+
+The final learned recommendation pipeline now uses a separate genre-based diversity reranker after ML relevance ranking, described below.
 
 ---
 
@@ -373,7 +375,56 @@ During inference:
 3. Features are transformed using the saved scaler.
 4. Logistic regression's decision function produces a ranking score.
 5. Movies are sorted by ranking score from highest to lowest.
-6. The top requested movies are returned.
+6. A larger high-relevance candidate pool is retained.
+7. The candidate pool is reranked using genre-based diversity.
+8. The requested number of final recommendations is returned.
+
+
+---
+
+## 16. Diversity Reranking After Learned Ranking
+
+The final recommendation pipeline does not simply return the highest-scoring movies from the learned reranker.
+
+Instead, the learned model first produces a larger pool of high-relevance candidates. The current final pipeline requests:
+
+`candidate_pool_size = 5 × requested_recommendation_count`
+
+For example, requesting 10 final recommendations first produces the top 50 candidates according to the learned reranker.
+
+The diversity stage then greedily constructs the final recommendation slate.
+
+The highest-ranked candidate is always selected first.
+
+For each remaining position, every remaining candidate receives an adjusted selection score:
+
+`adjusted_score = original_ml_score - diversity_weight × maximum_genre_similarity`
+
+Genre similarity is measured using Jaccard similarity:
+
+`similarity(A, B) = |A ∩ B| / |A ∪ B|`
+
+where A and B are the genre sets of two movies.
+
+For a candidate movie, the system compares it against every movie already selected and uses the maximum similarity:
+
+`maximum_genre_similarity = max(similarity(candidate, selected_movie))`
+
+The current diversity weight is:
+
+`0.15`
+
+The candidate with the highest adjusted score is selected next, and the process repeats until the requested number of recommendations has been chosen.
+
+Using maximum similarity instead of summing similarity across the entire slate prevents common genres such as Drama from accumulating an excessively large penalty simply because they appear in several selected movies.
+
+This stage creates a relevance-diversity tradeoff:
+
+- `diversity_weight = 0` preserves the original ML ranking.
+- A small positive weight can promote a slightly lower-scoring movie when it is substantially different from movies already selected.
+- An excessively large weight could sacrifice too much predicted relevance for variety.
+
+The returned `score` remains the original learned ranking score. The diversity-adjusted score is temporary and depends on the recommendations already selected, so it is not treated as a permanent movie score.
 
 ---
 
@@ -714,7 +765,7 @@ Experimental models are stored separately rather than overwriting stronger or hi
 
 # Inference
 
-The current established inference entry point is:
+The original learned-ranking inference function is:
 
 `recommend_with_ml(...)`
 
@@ -722,17 +773,23 @@ It:
 
 1. Loads the saved ranker.
 2. Finds the user's watched movies.
-3. Generates unseen candidates.
-4. Computes personal and quality signals through the genre recommender.
-5. Computes movie popularity.
-6. Standardizes the model features.
-7. Calculates the logistic-regression decision score.
-8. Sorts candidates by ML score.
-9. Returns the top recommendations.
+3. Removes watched movies from the candidate set.
+4. Computes personal, quality, and popularity features.
+5. Standardizes the features using the saved scaler.
+6. Calculates the logistic-regression decision score.
+7. Sorts unseen movies by ML score.
 
-Week 3 hybrid infrastructure can additionally construct content and collaborative features.
+The final Week 4 recommendation pipeline builds on this ranking through:
 
-A stable unified final-ranking API remains part of the next integration stage.
+`recommend_for_user(...)`
+
+Conceptually:
+
+`unseen movies → learned ML ranking → high-relevance candidate pool → diversity reranking → final Top-K`
+
+The final recommendation layer uses the strongest currently validated learned reranker rather than forcing the Week 3 Hybrid V1 model into production, because the original Personal + Quality + Popularity reranker still performs better on held-out evaluation.
+
+Detailed public API usage is documented in the repository's main README.
 
 ---
 
@@ -770,7 +827,7 @@ Tests verify:
 
 Current full automated test suite:
 
-`112 passed`
+`131 passed`
 
 ---
 
@@ -783,8 +840,18 @@ Current genre and heuristic parameters:
 - Minimum release-year weight: `0.50`
 - Genre confidence prior: `5.0`
 - Heuristic quality weight: `0.20`
-- Diversity repetition penalty: `0.08`
-- Heuristic diversity candidate pool: `50 movies`
+
+Heuristic recommender diversity:
+
+- Repetition penalty: `0.08 per overlapping genre`
+- Candidate pool: `50 movies`
+
+Final learned recommender diversity:
+
+- Genre similarity: Jaccard similarity
+- Diversity weight: `0.15`
+- Candidate pool multiplier: `5× requested recommendation count`
+- Similarity aggregation: maximum similarity to any already-selected movie
 
 Movie-quality Bayesian prior strength:
 
@@ -823,7 +890,8 @@ Matrix-factorization configuration used by the hybrid experiments:
 - Content and collaborative confidence signals are not yet included in the learned hybrid feature set.
 - Personalization remains heavily influenced by genres rather than deeper semantic relationships between individual movies.
 - Popularity can introduce bias toward widely rated movies.
-- The final learned recommendation path does not yet apply diversity reranking.
+- Diversity currently uses only explicit genre overlap and does not yet model semantic similarity between movies.
+- The current diversity weight and candidate-pool multiplier are initial engineering choices and have not yet been validated through the Week 5 Top-K evaluation.
 - The model is trained globally rather than training a separate ranker for every individual user.
 - MovieLens metadata is limited compared with production movie data.
 - Release-year similarity includes manually designed behavior.
@@ -843,8 +911,8 @@ Possible improvements include:
 - add richer semantic movie information such as keywords and plot text
 - test TF-IDF and embedding-based movie representations
 - test stronger ranking models such as gradient-boosted trees after the core pipeline is stable
-- apply diversity reranking after learned ranking
-- create a stable final recommendation API
+- evaluate the relevance-diversity tradeoff using Top-K metrics and controlled ablations
+- test richer movie-similarity signals for diversity beyond explicit genre overlap
 - evaluate ranking quality using NDCG@10 and additional Top-K metrics
 - optimize hyperparameters using validation data
 - improve cold-start behavior for users with little rating history
@@ -863,6 +931,8 @@ Possible improvements include:
 - `src/hybrid/genre_recommender.py`
 - `src/hybrid/ml_reranker.py`
 - `src/hybrid/content_adapter.py`
+- `src/hybrid/diversity.py`
+- `src/hybrid/recommender.py`
 
 ## Training
 
