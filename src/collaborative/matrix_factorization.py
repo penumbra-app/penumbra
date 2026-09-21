@@ -5,6 +5,21 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from numbers import Integral, Real
+
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parent / "artifacts" / "collaborative_mf.joblib"
+
+
+def checked_ids(values, name):
+    result = []
+    for value in values:
+        if (isinstance(value, (bool, np.bool_)) or not isinstance(value, Real)
+                or value < 0 or value > np.iinfo(np.int64).max
+                or not np.isfinite(value) or value != int(value)):
+            raise ValueError(f"{name} must contain finite nonnegative integer IDs")
+        result.append(int(value))
+    return result
+
 
 
 @dataclass
@@ -33,6 +48,18 @@ class BiasedMatrixFactorization:
         random_state: int = 42,
         shrink_latent: bool = True,
     ):
+        for name, value in [("n_factors", n_factors), ("n_epochs", n_epochs)]:
+            if isinstance(value, bool) or not isinstance(value, Integral) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
+        for name, value in [("learning_rate", learning_rate), ("regularization", regularization), ("prior_strength", prior_strength)]:
+            if isinstance(value, bool) or not isinstance(value, Real) or not np.isfinite(value):
+                raise ValueError(f"{name} must be finite and numeric")
+        if learning_rate <= 0 or regularization < 0:
+            raise ValueError("learning_rate must be positive and regularization nonnegative")
+        if not isinstance(shrink_latent, bool):
+            raise ValueError("shrink_latent must be boolean")
+        if isinstance(random_state, bool) or not isinstance(random_state, Integral) or not 0 <= random_state < 2**32:
+            raise ValueError("random_state must be an integer in [0, 2**32)")
         if not np.isfinite(prior_strength) or prior_strength <= 0:
             raise ValueError("prior_strength must be finite and positive")
         self.n_factors = n_factors
@@ -53,7 +80,13 @@ class BiasedMatrixFactorization:
             raise ValueError(
                 f"Ratings DataFrame is missing columns: {sorted(missing)}")
 
-        clean_ratings = ratings[["userId", "movieId", "rating"]].dropna()
+        # Reject invalid rows rather than silently changing the training sample.
+        clean_ratings = ratings[["userId", "movieId", "rating"]].copy()
+        clean_ratings["userId"] = checked_ids(clean_ratings["userId"], "userId")
+        clean_ratings["movieId"] = checked_ids(clean_ratings["movieId"], "movieId")
+        if any(isinstance(v, (bool, np.bool_)) or not isinstance(v, Real)
+               or not np.isfinite(v) or not .5 <= v <= 5 for v in clean_ratings["rating"]):
+            raise ValueError("rating must contain finite numeric values from 0.5 to 5")
         if clean_ratings.empty:
             raise ValueError("Ratings cannot be empty.")
 
@@ -86,6 +119,7 @@ class BiasedMatrixFactorization:
         reg = self.regularization
         n_samples = len(rating_values)
 
+        self.training_history_ = []
         for epoch in range(self.n_epochs):
             shuffle_order = rng.permutation(n_samples)
 
@@ -112,6 +146,15 @@ class BiasedMatrixFactorization:
                 movie_factors[i] += lr * \
                     (err * u_factors_prev - reg * movie_factors[i])
 
+            if not all(np.isfinite(x).all() for x in (user_biases, movie_biases, user_factors, movie_factors)):
+                raise ValueError("Training diverged; reduce learning_rate")
+            fitted = (global_mean + user_biases[user_indices] + movie_biases[movie_indices]
+                      + np.einsum("ij,ij->i", user_factors[user_indices], movie_factors[movie_indices]))
+            if not np.isfinite(fitted).all():
+                raise ValueError("Training predictions diverged; reduce learning_rate")
+            self.training_history_.append({"epoch": epoch + 1,
+                                           "rmse": float(np.sqrt(np.mean((rating_values - fitted) ** 2)))})
+
         self.weights_ = ModelWeights(
             global_mean=global_mean,
             user_biases=user_biases,
@@ -124,7 +167,13 @@ class BiasedMatrixFactorization:
             movie_counts={int(k): int(v) for k, v in movie_counts.items()},
         )
         self.is_fitted_ = True
+        self.metadata_ = {"training_rows": len(clean_ratings), "users": n_users, "movies": n_movies}
         return self
+
+    def get_params(self):
+        return {name: getattr(self, name) for name in (
+            "n_factors", "learning_rate", "regularization", "n_epochs",
+            "prior_strength", "random_state", "shrink_latent")}
 
     def predict(
         self,
@@ -139,6 +188,8 @@ class BiasedMatrixFactorization:
             raise ValueError(
                 "user_ids and movie_ids must have the same length")
 
+        user_ids = checked_ids(user_ids, "user_ids")
+        movie_ids = checked_ids(movie_ids, "movie_ids")
         w = self.weights_
         predictions = []
 
@@ -205,13 +256,49 @@ class BiasedMatrixFactorization:
             columns=["user_id", "movie_id", "predicted_score", "confidence"],
         )
 
-    def save(self, filepath: str | Path = "src/models/collaborative_mf.joblib") -> None:
-        if not self.is_fitted_:
+    def save(self, filepath: str | Path = DEFAULT_MODEL_PATH) -> None:
+        if not self.is_fitted_ or self.weights_ is None:
             raise RuntimeError("Cannot save an unfitted model.")
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self, path)
+        # Replace only after serialization succeeds.
+        import os
+        import tempfile
+        handle, temporary = tempfile.mkstemp(dir=path.parent, suffix=".joblib")
+        os.close(handle)
+        try:
+            joblib.dump({"format_version": 1, "settings": self.get_params(),
+                         "metadata": getattr(self, "metadata_", {}), "model": self}, temporary)
+            os.replace(temporary, path)
+        finally:
+            if Path(temporary).exists():
+                Path(temporary).unlink()
 
     @classmethod
-    def load(cls, filepath: str | Path = "src/models/collaborative_mf.joblib") -> BiasedMatrixFactorization:
-        return joblib.load(filepath)
+    def load(cls, filepath: str | Path = DEFAULT_MODEL_PATH) -> BiasedMatrixFactorization:
+        """Load trusted local joblib files only (pickle can execute code)."""
+        artifact = joblib.load(filepath)
+        if isinstance(artifact, dict):
+            if artifact.get("format_version") != 1:
+                raise ValueError("Unsupported collaborative model format")
+            model = artifact.get("model")
+        else:
+            model = artifact  # Compatibility with legacy raw model objects.
+        if not isinstance(model, cls) or not model.is_fitted_ or model.weights_ is None:
+            raise ValueError("Artifact does not contain a fitted collaborative model")
+        if not hasattr(model, "shrink_latent"):
+            model.shrink_latent = False
+        cls(**model.get_params())  # Validate restored settings.
+        if isinstance(artifact, dict) and artifact.get("settings") != model.get_params():
+            raise ValueError("Artifact settings do not match model")
+        w = model.weights_
+        shapes = [(w.user_biases, (len(w.user_to_idx),)),
+                  (w.movie_biases, (len(w.movie_to_idx),)),
+                  (w.user_factors, (len(w.user_to_idx), model.n_factors)),
+                  (w.movie_factors, (len(w.movie_to_idx), model.n_factors))]
+        if not np.isfinite(w.global_mean) or any(x.shape != shape or not np.isfinite(x).all() for x, shape in shapes):
+            raise ValueError("Invalid collaborative model weights")
+        for mapping, counts in [(w.user_to_idx, w.user_counts), (w.movie_to_idx, w.movie_counts)]:
+            if set(mapping.values()) != set(range(len(mapping))) or any(counts.get(k, 0) <= 0 for k in mapping):
+                raise ValueError("Invalid collaborative model IDs or counts")
+        return model
