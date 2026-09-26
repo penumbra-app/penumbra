@@ -1,3 +1,4 @@
+from src.content.features import FeaturePreference, feature_values
 from src.content.baselines import (
     RatingResidual,
     UserBaseline,
@@ -27,6 +28,7 @@ from src.content.scoring import (
     predict_batch,
 )
 from src.content.schemas import (
+    FeatureDebug,
     MovieMetadata,
     PredictionDebug,
     PredictionResult,
@@ -35,6 +37,9 @@ from src.content.schemas import (
 )
 
 __all__ = [
+    "FeatureDebug",
+    "FeaturePreference",
+    "feature_values",
     "GenrePreference",
     "GenreComponentResult",
     "GenreMatch",

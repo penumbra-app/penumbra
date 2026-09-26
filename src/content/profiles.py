@@ -5,12 +5,13 @@ from dataclasses import dataclass
 
 from src.content.baselines import calculate_user_baseline
 from src.content.errors import UnknownUserError
+from src.content.features import FeaturePreference, aggregate_feature_preferences
 from src.content.genres import GenrePreference, _unique_genres, aggregate_genre_preferences
 from src.content.reliability import ProfileConfig, rating_weights
 from src.content.schemas import MovieMetadata, UserRating
 
 
-PROFILE_VERSION = "genre-v2"
+PROFILE_VERSION = "content-v3"
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,7 @@ class UserTasteProfile:
     profile_version: str
     metadata: ProfileMetadata
     config: ProfileConfig = ProfileConfig()
+    feature_preferences: tuple[FeaturePreference, ...] = ()
 
     def preference_for(self, genre: str) -> float:
         key = genre.strip().casefold()
@@ -119,4 +121,7 @@ def build_profile(
         profile_version=PROFILE_VERSION,
         metadata=metadata,
         config=active_config,
+        feature_preferences=aggregate_feature_preferences(
+            baseline, movies_by_id, weights, active_config.regularization_strength,
+        ),
     )

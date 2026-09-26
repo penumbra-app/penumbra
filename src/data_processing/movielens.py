@@ -38,16 +38,35 @@ def _optional_timestamp(value: object) -> int | None:
     return int(value)
 
 
+def _optional_metadata(value: object) -> object:
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
 def movie_metadata_from_record(record: Mapping[str, Any]) -> MovieMetadata:
     title = str(record["title"])
     match = YEAR_PATTERN.search(title)
-    release_year = int(match.group(1)) if match else None
+    year = _optional_metadata(record.get("release_year"))
+    release_year = int(year) if year is not None else int(match.group(1)) if match else None
+    directors = _optional_metadata(record.get("directors"))
+    if isinstance(directors, str):
+        directors = parse_genres(directors)
+    elif directors is not None:
+        directors = tuple(directors)
+    runtime = _optional_metadata(record.get("runtime_minutes"))
+    language = _optional_metadata(record.get("language"))
 
     return MovieMetadata(
         movie_id=int(record["movieId"]),
         title=title,
         genres=parse_genres(record.get("genres")),
         release_year=release_year,
+        directors=directors or (),
+        runtime_minutes=float(runtime) if runtime is not None else None,
+        language=language,
     )
 
 

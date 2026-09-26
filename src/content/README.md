@@ -1,6 +1,6 @@
-# Content Model — Weeks 1 and 2
+# Content Model — Weeks 1–3
 
-The standalone genre recommender implements:
+The standalone content recommender implements:
 
 ```text
 ratings → UserTasteProfile → unseen movie → PredictionResult
@@ -11,6 +11,13 @@ Week 2 adds effective evidence counts, regularization toward the user's baseline
 gentle recency weighting, and confidence based on candidate genre support.
 The existing `PredictionResult` contract is preserved: user ID, movie ID, score
 from 0 to 5, confidence from 0 to 1, structured reason signals, and optional debug.
+
+Week 3 adds director, runtime, release-decade, and language preferences. Each
+feature has a cap before and after weighting; the final rating stays within 0–5.
+Missing metadata stays neutral. Supply `directors=("Name",)`,
+`runtime_minutes=105`, `release_year=1998`, and `language="en"` on `MovieMetadata`
+to use these signals. The bundled CSV only supplies release years, so the other
+three require enriched records. See the specification for buckets and weights.
 
 ## Quick start
 
@@ -69,14 +76,15 @@ per user; it is not a top-score ranking. Unknown catalog IDs raise explicit
 | `schemas.py` | Validated inputs, predictions, reasons, and debug fields |
 | `baselines.py` | Personal mean rating and residuals |
 | `genres.py` | Normalize multi-genre residuals and aggregate weighted evidence |
+| `features.py` | Learn director, runtime, decade, and language preferences |
 | `reliability.py` | Profile configuration and reproducible recency weights |
-| `profiles.py` | Versioned `genre-v2` profiles and metadata coverage |
+| `profiles.py` | Versioned `content-v3` profiles and metadata coverage |
 | `scoring.py` | Single and standalone batch predictions with confidence |
 | `model.py` | Catalog lookup, cached profiles, and unseen filtering |
 | `demo.py` | Real MovieLens profile and unseen movie predictions |
 
 See [the full model specification](../../docs/content-model.md) for formulas,
-defaults, missing-data policies, the Week 1/2 checklist, and limitations.
+defaults, missing-data policies, the Week 1–3 checklist, and limitations.
 Confidence expresses evidence support; it is not a calibrated accuracy probability.
 
 ## Verification

@@ -25,7 +25,8 @@ class ScoringTests(unittest.TestCase):
     def test_negative_drama_movie_scores_below_baseline(self) -> None:
         result = predict_one(self.profile, TOY_MOVIES_BY_ID[7])
 
-        self.assertAlmostEqual(result.predicted_score, 2.375)
+        # The disliked 2000s era now contributes another -0.0625.
+        self.assertAlmostEqual(result.predicted_score, 2.3125)
         self.assertLess(result.predicted_score, self.profile.baseline)
 
     def test_unknown_genre_returns_baseline(self) -> None:
@@ -108,7 +109,8 @@ class ScoringTests(unittest.TestCase):
     def test_confidence_and_reasons_expose_genre_evidence(self) -> None:
         result = predict_one(self.profile, TOY_MOVIES_BY_ID[8])
 
-        self.assertAlmostEqual(result.confidence, (4 / 9) * (2 / 7))
+        # The candidate's unseen 2020s era supplies zero support.
+        self.assertAlmostEqual(result.confidence, (4 / 9) * ((2 / 7) / 2))
         self.assertEqual(result.reason_signals[0].feature_value, "Sci-Fi")
         self.assertEqual(result.reason_signals[0].evidence_count, 2)
 
