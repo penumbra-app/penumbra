@@ -74,6 +74,10 @@ def main(
         print(f"Bounded genre value: {debug.bounded_genre_component:+.3f}")
         print(f"Genre weight: {debug.genre_weight:.3f}")
         print(f"Weighted adjustment: {debug.weighted_genre_adjustment:+.3f}")
+        for component in debug.feature_components:
+            print(f"{component.feature_type}: "
+                  f"{', '.join(component.candidate_values) or 'missing'} "
+                  f"→ adjustment {component.weighted_adjustment:+.3f}")
         print("FINAL SCORE")
         print(f"Baseline: {debug.baseline:.3f}")
         print(f"Unclamped: {debug.unclamped_score:.3f}")

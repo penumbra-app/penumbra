@@ -130,7 +130,7 @@ data/
 
 ## Standalone Content Model
 
-The standalone content model lives in `src/content/`. It builds a cached user taste profile from personal rating residuals, learns normalized genre preferences, and predicts requested movies with a bounded genre adjustment added to the user's baseline. Final scores are clamped to `0` through `5`, and optional debug output exposes every intermediate value.
+The standalone content model lives in `src/content/`. It builds a cached user taste profile from personal rating residuals and learns preferences across genre, director, runtime, release decade, and language. Predictions combine capped feature adjustments with the user's baseline, while missing metadata remains neutral. Final scores are clamped to `0` through `5`, and optional debug output exposes intermediate scoring values.
 
 The batch API preserves user order and then movie order. `predict_unseen` directly removes movies each user has already rated and returns deterministic unseen-movie predictions with an optional per-user limit. Unknown users and movie IDs raise explicit errors, while known movies with missing or unknown genres safely fall back to the user's baseline. More advanced candidate retrieval remains outside this package.
 

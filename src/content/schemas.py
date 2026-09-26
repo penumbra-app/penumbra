@@ -56,6 +56,12 @@ class MovieMetadata:
         _validate_identifier(self.movie_id, "movie_id")
         if not isinstance(self.title, str) or not self.title.strip():
             raise ValueError("title must be a non-empty string")
+        if not isinstance(self.directors, tuple) or any(
+            not isinstance(value, str) for value in self.directors
+        ):
+            raise ValueError("directors must be a tuple of strings")
+        if self.language is not None and not isinstance(self.language, str):
+            raise ValueError("language must be a string or None")
         if self.runtime_minutes is not None and (
             not isinstance(self.runtime_minutes, (int, float))
             or isinstance(self.runtime_minutes, bool)
@@ -89,6 +95,18 @@ class ReasonSignal:
 
 
 @dataclass(frozen=True)
+class FeatureDebug:
+    feature_type: str
+    candidate_values: tuple[str, ...]
+    matched_values: tuple[str, ...]
+    raw_component: float
+    bounded_component: float
+    weight: float
+    weighted_adjustment: float
+    support: float
+
+
+@dataclass(frozen=True)
 class PredictionDebug:
     baseline: float
     movie_genres: tuple[str, ...]
@@ -100,6 +118,7 @@ class PredictionDebug:
     weighted_genre_adjustment: float
     unclamped_score: float
     was_clamped: bool
+    feature_components: tuple[FeatureDebug, ...] = ()
     genre_support: float = 0.0
     effective_genre_evidence: tuple[tuple[str, float], ...] = ()
 
