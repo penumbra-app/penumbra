@@ -646,9 +646,10 @@ def build_hybrid_training_dataset(
         n_factors=20,
         learning_rate=0.005,
         regularization=0.02,
-        n_epochs=20,
+        n_epochs=40,
         prior_strength=5.0,
         random_state=42,
+        shrink_latent=True,
     )
 
     collaborative_model.fit(
@@ -746,9 +747,10 @@ def build_ablation_training_dataset(
         n_factors=20,
         learning_rate=0.005,
         regularization=0.02,
-        n_epochs=20,
+        n_epochs=40,
         prior_strength=5.0,
         random_state=42,
+        shrink_latent=True,
     )
 
     collaborative_model.fit(global_profile_ratings)

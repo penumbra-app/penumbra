@@ -4,7 +4,7 @@ import pandas as pd
 from src.collaborative.matrix_factorization import (
     BiasedMatrixFactorization,
 )
-from src.evaluation.metrics import comparison_credit
+from src.evaluation.metrics import comparison_credit, ndcg_at_k
 from src.evaluation.splits import build_user_evaluation_split
 from src.hybrid.content_adapter import (
     build_content_model_from_frames,
@@ -174,6 +174,11 @@ def main() -> None:
 
     # Each experiment stores one accuracy per user.
     user_accuracies = {
+        name: []
+        for name in EXPERIMENTS
+    }
+
+    user_ndcgs = {
         name: []
         for name in EXPERIMENTS
     }
@@ -412,19 +417,29 @@ def main() -> None:
         users_evaluated += 1
         total_pairs += user_pairs
 
+        actual_relevance = [
+            movie_data[movie_id]["actual"]
+            for movie_id in movie_ids
+        ]
+
         for name in EXPERIMENTS:
-            accuracy = (
-                correct[name]
-                / user_pairs
+            accuracy = correct[name] / user_pairs
+
+            predicted_scores = [
+                movie_data[movie_id]["scores"][name]
+                for movie_id in movie_ids
+            ]
+
+            ndcg = ndcg_at_k(
+                actual_relevance=actual_relevance,
+                predicted_scores=predicted_scores,
+                k=10,
             )
 
-            user_accuracies[
-                name
-            ].append(accuracy)
+            user_accuracies[name].append(accuracy)
+            user_ndcgs[name].append(ndcg)
 
-            weighted_correct[
-                name
-            ] += correct[name]
+            weighted_correct[name] += correct[name]
 
     if total_pairs == 0:
         raise ValueError(
@@ -450,8 +465,9 @@ def main() -> None:
 
     print(
         f"{'Experiment':<44}"
-        f"{'Macro':>14}"
+        f"{'Pairwise':>14}"
         f"{'Weighted':>14}"
+        f"{'NDCG@10':>14}"
     )
 
     print("-" * 76)
@@ -460,22 +476,21 @@ def main() -> None:
 
     for name in EXPERIMENTS:
 
-        macro = float(
-            np.mean(
-                user_accuracies[name]
-            )
-        )
+        macro = float(np.mean(user_accuracies[name]))
 
         weighted = (
             weighted_correct[name]
             / total_pairs
         )
 
+        ndcg = float(np.mean(user_ndcgs[name]))
+
         results.append(
             (
                 name,
                 macro,
                 weighted,
+                ndcg,
             )
         )
 
@@ -489,12 +504,14 @@ def main() -> None:
         name,
         macro,
         weighted,
+        ndcg,
     ) in results:
 
         print(
             f"{name:<44}"
             f"{macro:>13.3%}"
             f"{weighted:>13.3%}"
+            f"{ndcg:>14.4f}"
         )
 
     print("-" * 76)
@@ -522,7 +539,7 @@ def main() -> None:
     print("\nBest Ablation")
     print("=" * 76)
 
-    best_name, best_macro, best_weighted = (
+    best_name, best_macro, best_weighted, best_ndcg = (
         results[0]
     )
 
@@ -534,6 +551,9 @@ def main() -> None:
     )
     print(
         f"Weighted: {best_weighted:.3%}"
+    )
+    print(
+        f"NDCG@10:  {best_ndcg:.4f}"
     )
 
     print(

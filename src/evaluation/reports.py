@@ -48,7 +48,121 @@ def weighted_accuracy(
 
     return weighted_correct / total_pairs
 
+def print_week5_metrics(
+    user_results: list[UserPairwiseResult],
+) -> None:
+    """
+    Print the primary Week 5 evaluation metrics.
 
+    MAE and RMSE apply only to models whose outputs are predicted
+    ratings. NDCG@10 and pairwise accuracy apply to all rankers.
+    """
+
+    models = [
+        (
+            "Baseline",
+            "baseline_accuracy",
+            "baseline_ndcg",
+            "baseline_mae",
+            "baseline_rmse",
+        ),
+        (
+            "Heuristic",
+            "heuristic_accuracy",
+            "heuristic_ndcg",
+            "heuristic_mae",
+            "heuristic_rmse",
+        ),
+        (
+            "Old ML",
+            "ml_accuracy",
+            "ml_ndcg",
+            None,
+            None,
+        ),
+        (
+            "MF",
+            "matrix_factorization_accuracy",
+            "matrix_factorization_ndcg",
+            "matrix_factorization_mae",
+            "matrix_factorization_rmse",
+        ),
+        (
+            "Content",
+            "content_accuracy",
+            "content_ndcg",
+            "content_mae",
+            "content_rmse",
+        ),
+        (
+            "Hybrid V1",
+            "hybrid_accuracy",
+            "hybrid_ndcg",
+            None,
+            None,
+        ),
+    ]
+
+    print()
+    print("Week 5 Evaluation")
+    print("=" * 72)
+
+    print(
+        f"{'Model':<14} | "
+        f"{'Pairwise':>9} | "
+        f"{'NDCG@10':>9} | "
+        f"{'MAE':>8} | "
+        f"{'RMSE':>8}"
+    )
+
+    print("-" * 72)
+
+    for (
+        name,
+        pairwise_attribute,
+        ndcg_attribute,
+        mae_attribute,
+        rmse_attribute,
+    ) in models:
+        pairwise = mean([
+            getattr(user_result, pairwise_attribute)
+            for user_result in user_results
+        ])
+
+        ndcg = mean([
+            getattr(user_result, ndcg_attribute)
+            for user_result in user_results
+        ])
+
+        mae = (
+            mean([
+                getattr(user_result, mae_attribute)
+                for user_result in user_results
+            ])
+            if mae_attribute is not None
+            else None
+        )
+
+        rmse = (
+            mean([
+                getattr(user_result, rmse_attribute)
+                for user_result in user_results
+            ])
+            if rmse_attribute is not None
+            else None
+        )
+
+        mae_text = f"{mae:.4f}" if mae is not None else "—"
+        rmse_text = f"{rmse:.4f}" if rmse is not None else "—"
+
+        print(
+            f"{name:<14} | "
+            f"{pairwise:>8.3%} | "
+            f"{ndcg:>9.4f} | "
+            f"{mae_text:>8} | "
+            f"{rmse_text:>8}"
+        )
+        
 def bootstrap_mean_difference(
     differences: list[float],
     iterations: int = 10_000,

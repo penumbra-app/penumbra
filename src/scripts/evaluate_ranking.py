@@ -1,4 +1,5 @@
 from src.evaluation.ranking import evaluate_pairwise_accuracy
+from src.evaluation.reports import print_week5_metrics
 from src.load_data import load_movielens
 
 
@@ -27,7 +28,7 @@ def main() -> None:
     print(f"Rated movies: {ratings['movieId'].nunique():,}")
     print(f"Movie rows:   {len(movies):,}")
 
-    print("\nRunning final 20% pairwise evaluation...\n")
+    print("\nRunning final 20% evaluation...\n")
 
     result = evaluate_pairwise_accuracy(
         ratings=ratings,
@@ -71,6 +72,10 @@ def main() -> None:
     )
 
     user_results = result.user_results
+
+    # Week 5 primary evaluation:
+    # Pairwise Accuracy + NDCG@10 + MAE + RMSE
+    print_week5_metrics(user_results)
 
     baseline_weighted = weighted_accuracy(
         user_results,
