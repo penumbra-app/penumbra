@@ -629,7 +629,7 @@ Test pairs: 633,032
 | Heuristic | 60.633% |
 | **Original ML reranker** | **63.876%** |
 | Matrix factorization | 62.634% |
-| Content | 55.026% |
+| Content | 55.622% |
 | Hybrid V1 | 63.253% |
 
 Hybrid V1 improvement:
@@ -827,7 +827,7 @@ Tests verify:
 
 Current full automated test suite:
 
-`131 passed`
+`194 passed`
 
 ---
 
@@ -913,7 +913,6 @@ Possible improvements include:
 - test stronger ranking models such as gradient-boosted trees after the core pipeline is stable
 - evaluate the relevance-diversity tradeoff using Top-K metrics and controlled ablations
 - test richer movie-similarity signals for diversity beyond explicit genre overlap
-- evaluate ranking quality using NDCG@10 and additional Top-K metrics
 - optimize hyperparameters using validation data
 - improve cold-start behavior for users with little rating history
 - add calibrated predicted-enjoyment scores in addition to ranking scores
@@ -1005,7 +1004,7 @@ Test pairs: 633,032
 | Heuristic | 60.633% | 65.127% |
 | **Original ML reranker** | **63.876%** | **68.516%** |
 | Matrix factorization | 62.634% | 67.265% |
-| Content | 55.026% | 59.095% |
+| Content | 55.622% | 63.287% |
 | Hybrid V1 | 63.253% | 67.798% |
 
 Hybrid V1 features:
