@@ -14,8 +14,19 @@ class ProfileConfig:
     recency_half_life_days: float | None = 365.0
     minimum_recency_weight: float = 0.5
     reference_timestamp: int | None = None
+    max_cast_members: int = 10
+    cold_start_score: float = 2.5
 
     def __post_init__(self) -> None:
+        if (isinstance(self.max_cast_members, bool)
+                or not isinstance(self.max_cast_members, int)
+                or self.max_cast_members <= 0):
+            raise ValueError("max_cast_members must be a positive integer")
+        if (isinstance(self.cold_start_score, bool)
+                or not isinstance(self.cold_start_score, (int, float))
+                or not math.isfinite(self.cold_start_score)
+                or not 0 <= self.cold_start_score <= 5):
+            raise ValueError("cold_start_score must be finite and in [0, 5]")
         for name in ("regularization_strength", "minimum_recency_weight"):
             value = getattr(self, name)
             if (

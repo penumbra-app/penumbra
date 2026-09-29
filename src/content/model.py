@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
-from src.content.errors import UnknownMovieError, UnknownUserError
+from src.content.errors import UnknownMovieError
 from src.content.profiles import UserTasteProfile, build_profile
 from src.content.reliability import ProfileConfig
-from src.content.schemas import MovieMetadata, PredictionResult, UserRating
+from src.content.schemas import MovieMetadata, PredictionResult, UserRating, _validate_identifier
 from src.content.scoring import ScoringConfig, predict_one
 
 
@@ -38,13 +38,12 @@ class ContentModel:
         }
 
     def build_profile(self, user_id: int) -> UserTasteProfile:
+        _validate_identifier(user_id, "user_id")
         cached = self._profiles.get(user_id)
         if cached is not None:
             return cached
 
-        user_ratings = self._ratings_by_user.get(user_id)
-        if user_ratings is None:
-            raise UnknownUserError(user_id)
+        user_ratings = self._ratings_by_user.get(user_id, ())
 
         profile = build_profile(
             user_id=user_id,
@@ -83,8 +82,7 @@ class ContentModel:
         ordered_movie_ids = tuple(movie_ids)
 
         for user_id in ordered_user_ids:
-            if user_id not in self._ratings_by_user:
-                raise UnknownUserError(user_id)
+            _validate_identifier(user_id, "user_id")
 
         for movie_id in ordered_movie_ids:
             if movie_id not in self._movies_by_id:
@@ -97,9 +95,8 @@ class ContentModel:
         )
 
     def unseen_movie_ids(self, user_id: int) -> tuple[int, ...]:
-        user_ratings = self._ratings_by_user.get(user_id)
-        if user_ratings is None:
-            raise UnknownUserError(user_id)
+        _validate_identifier(user_id, "user_id")
+        user_ratings = self._ratings_by_user.get(user_id, ())
 
         rated_movie_ids = {rating.movie_id for rating in user_ratings}
         return tuple(

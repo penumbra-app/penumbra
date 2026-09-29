@@ -10,6 +10,7 @@ from src.content.schemas import MovieMetadata, UserRating
 
 YEAR_PATTERN = re.compile(r"\((\d{4})\)\s*$")
 NO_GENRES = "(no genres listed)"
+MISSING_VALUES = {"", "\\n", "null", "none", "nan", "n/a", NO_GENRES}
 
 
 def parse_genres(value: object) -> tuple[str, ...]:
@@ -22,7 +23,7 @@ def parse_genres(value: object) -> tuple[str, ...]:
     for raw_genre in value.split("|"):
         genre = raw_genre.strip()
         key = genre.casefold()
-        if not genre or key == NO_GENRES.casefold() or key in seen:
+        if key in MISSING_VALUES or key in seen:
             continue
         seen.add(key)
         unique.append(genre)
@@ -41,9 +42,21 @@ def _optional_timestamp(value: object) -> int | None:
 def _optional_metadata(value: object) -> object:
     if value is None or (isinstance(value, float) and math.isnan(value)):
         return None
-    if isinstance(value, str) and not value.strip():
+    if isinstance(value, str) and value.strip().casefold() in MISSING_VALUES:
         return None
     return value
+
+
+def _people(value: object) -> tuple[str, ...]:
+    value = _optional_metadata(value)
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        return parse_genres(value)
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("people metadata must be a pipe-separated string or a sequence")
+    return tuple(item.strip() for item in value if isinstance(item, str)
+                 and item.strip().casefold() not in MISSING_VALUES)
 
 
 def movie_metadata_from_record(record: Mapping[str, Any]) -> MovieMetadata:
@@ -51,11 +64,7 @@ def movie_metadata_from_record(record: Mapping[str, Any]) -> MovieMetadata:
     match = YEAR_PATTERN.search(title)
     year = _optional_metadata(record.get("release_year"))
     release_year = int(year) if year is not None else int(match.group(1)) if match else None
-    directors = _optional_metadata(record.get("directors"))
-    if isinstance(directors, str):
-        directors = parse_genres(directors)
-    elif directors is not None:
-        directors = tuple(directors)
+    directors = _people(record.get("directors"))
     runtime = _optional_metadata(record.get("runtime_minutes"))
     language = _optional_metadata(record.get("language"))
 
@@ -65,6 +74,7 @@ def movie_metadata_from_record(record: Mapping[str, Any]) -> MovieMetadata:
         genres=parse_genres(record.get("genres")),
         release_year=release_year,
         directors=directors or (),
+        cast=_people(record.get("cast")),
         runtime_minutes=float(runtime) if runtime is not None else None,
         language=language,
     )

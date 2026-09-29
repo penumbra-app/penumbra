@@ -56,10 +56,10 @@ class MovieMetadata:
         _validate_identifier(self.movie_id, "movie_id")
         if not isinstance(self.title, str) or not self.title.strip():
             raise ValueError("title must be a non-empty string")
-        if not isinstance(self.directors, tuple) or any(
-            not isinstance(value, str) for value in self.directors
-        ):
-            raise ValueError("directors must be a tuple of strings")
+        for name in ("genres", "directors", "cast"):
+            values = getattr(self, name)
+            if not isinstance(values, tuple) or any(not isinstance(value, str) for value in values):
+                raise ValueError(f"{name} must be a tuple of strings")
         if self.language is not None and not isinstance(self.language, str):
             raise ValueError("language must be a string or None")
         if self.runtime_minutes is not None and (
@@ -83,6 +83,7 @@ class ReasonSignal:
     feature_value: str
     strength: float
     evidence_count: float
+    score_contribution: float = 0.0
 
     def __post_init__(self) -> None:
         if not self.feature_type.strip():
@@ -92,6 +93,8 @@ class ReasonSignal:
         _validate_bounded_number(self.strength, "strength", -1.0, 1.0)
         if not math.isfinite(float(self.evidence_count)) or self.evidence_count < 0:
             raise ValueError("evidence_count must be non-negative")
+        if not math.isfinite(self.score_contribution):
+            raise ValueError("score_contribution must be finite")
 
 
 @dataclass(frozen=True)
@@ -131,6 +134,7 @@ class PredictionResult:
     confidence: float
     reason_signals: tuple[ReasonSignal, ...] = field(default_factory=tuple)
     debug: PredictionDebug | None = None
+    fallback_reason: str | None = None
 
     def __post_init__(self) -> None:
         _validate_identifier(self.user_id, "user_id")

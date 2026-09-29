@@ -5,3 +5,10 @@ __pycache__/
 .env
 .vscode/
 
+# Local metadata snapshots, API caches, and exported evaluation assignments
+data/imdb/
+data/*.tsv.gz
+data/tmdb-cache/
+data/movies-enriched*
+data/content-splits.csv
+

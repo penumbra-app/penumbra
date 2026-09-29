@@ -76,6 +76,9 @@ class FeatureTests(unittest.TestCase):
             result = predict_one(self.profile, movie, config, include_debug=True)
             self.assertEqual(result.debug.weighted_genre_adjustment, sign)
             for component in result.debug.feature_components:
+                if not component.candidate_values:
+                    self.assertEqual(component.weighted_adjustment, 0)
+                    continue
                 self.assertEqual(component.weighted_adjustment,
                                  sign * getattr(config, f"max_abs_{component.feature_type}_component"))
             self.assertTrue(0 <= result.predicted_score <= 5)
