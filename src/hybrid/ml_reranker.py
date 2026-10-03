@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import joblib
 
+from src.content.profiles import ProfileConfig
+from src.content.scoring import ScoringConfig
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
@@ -600,6 +603,8 @@ def build_training_dataset(
 def build_hybrid_training_dataset(
     ratings: pd.DataFrame,
     movies: pd.DataFrame,
+    scoring_config: ScoringConfig | None = None,
+    profile_config: ProfileConfig | None = None,
 ) -> tuple[np.ndarray, np.ndarray, int]:
 
     user_splits: dict[
@@ -676,6 +681,8 @@ def build_hybrid_training_dataset(
         content_model = build_content_model_from_frames(
             profile_ratings=profile,
             movies=movies,
+            scoring_config=scoring_config,
+            profile_config=profile_config,
         )
 
         result = build_user_hybrid_training_examples(

@@ -1,3 +1,9 @@
+import argparse
+import json
+from pathlib import Path
+
+from src.content.profiles import ProfileConfig
+from src.content.scoring import ScoringConfig
 from src.evaluation.ranking import evaluate_pairwise_accuracy
 from src.evaluation.reports import print_week5_metrics
 from src.load_data import load_movielens
@@ -18,7 +24,53 @@ def weighted_accuracy(user_results, field_name: str) -> float:
 
 
 def main() -> None:
-    ratings, movies = load_movielens("data")
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--movies",
+        type=Path,
+        default=Path("data/movies.csv"),
+    )
+
+    parser.add_argument(
+        "--hybrid-model",
+        type=Path,
+        default=Path("src/models/hybrid_v1_reranker.joblib"),
+    )
+
+    parser.add_argument(
+        "--content-report",
+        type=Path,
+        default=None,
+    )
+
+    args = parser.parse_args()
+
+    ratings, movies = load_movielens(
+        "data",
+        movies_path=args.movies,
+    )
+
+    scoring_config = None
+    profile_config = None
+
+    if args.content_report is not None:
+        report = json.loads(
+            args.content_report.read_text(encoding="utf-8")
+        )
+
+        scoring_config = ScoringConfig(
+            **report["selected_config"]
+        )
+
+        profile_config = ProfileConfig(
+            **report["profile_config"]
+        )
+
+        print(
+            "Content configuration:",
+            report["selected_variant"],
+        )
 
     print("Dataset")
     print("=" * 72)
@@ -33,6 +85,9 @@ def main() -> None:
     result = evaluate_pairwise_accuracy(
         ratings=ratings,
         movies=movies,
+        hybrid_ranker_path=str(args.hybrid_model),
+        content_scoring_config=scoring_config,
+        content_profile_config=profile_config,
     )
 
     print("Pairwise Ranking Evaluation")
@@ -49,9 +104,9 @@ def main() -> None:
     print(f"Old ML:     {result.ml_accuracy:.3%}")
     print(f"MF:         {result.matrix_factorization_accuracy:.3%}")
     print(f"Content:    {result.content_accuracy:.3%}")
-    print(f"Hybrid V1:  {result.hybrid_accuracy:.3%}")
+    print(f"Hybrid:     {result.hybrid_accuracy:.3%}")
 
-    print("\nHybrid V1 Improvement")
+    print("\nHybrid Improvement")
     print("-" * 72)
 
     print(
@@ -73,8 +128,6 @@ def main() -> None:
 
     user_results = result.user_results
 
-    # Week 5 primary evaluation:
-    # Pairwise Accuracy + NDCG@10 + MAE + RMSE
     print_week5_metrics(user_results)
 
     baseline_weighted = weighted_accuracy(
@@ -115,9 +168,9 @@ def main() -> None:
     print(f"Old ML:     {ml_weighted:.3%}")
     print(f"MF:         {mf_weighted:.3%}")
     print(f"Content:    {content_weighted:.3%}")
-    print(f"Hybrid V1:  {hybrid_weighted:.3%}")
+    print(f"Hybrid:     {hybrid_weighted:.3%}")
 
-    print("\nHybrid V1 Pair-Weighted Improvement")
+    print("\nHybrid Pair-Weighted Improvement")
     print("-" * 72)
 
     print(

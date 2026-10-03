@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from src.content.profiles import ProfileConfig
+from src.content.scoring import ScoringConfig
 
 from src.collaborative.baseline import MovieAverageBaseline
 from src.collaborative.matrix_factorization import BiasedMatrixFactorization
@@ -73,6 +75,9 @@ class PairwiseEvaluation:
 def evaluate_pairwise_accuracy(
     ratings: pd.DataFrame,
     movies: pd.DataFrame,
+    hybrid_ranker_path: str = "src/models/hybrid_v1_reranker.joblib",
+    content_scoring_config: ScoringConfig | None = None,
+    content_profile_config: ProfileConfig | None = None,
 ) -> PairwiseEvaluation:
     train_ratings_list: list[pd.DataFrame] = []
     profile_ratings_list: list[pd.DataFrame] = []
@@ -149,7 +154,7 @@ def evaluate_pairwise_accuracy(
 
     ranker = load_ranker()
     hybrid_ranker = load_ranker(
-        path="src/models/hybrid_v1_reranker.joblib"
+        path=hybrid_ranker_path
     )
     content_user_accuracies: list[float] = []
     hybrid_user_accuracies: list[float] = []
@@ -201,6 +206,8 @@ def evaluate_pairwise_accuracy(
         content_model = build_content_model_from_frames(
             profile_ratings=profile,
             movies=movies,
+            scoring_config=content_scoring_config,
+            profile_config=content_profile_config,
         )
 
         hybrid_reference_ratings = global_profile_ratings.loc[
