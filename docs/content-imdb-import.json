@@ -1,0 +1,49 @@
+{
+  "source": "imdb_noncommercial",
+  "generated_at": "2026-09-28T23:32:55.080679+00:00",
+  "input_sha256": {
+    "data\\movies.csv": "5a5f32dd9bb3797b8e728a1b98958789d2b13f294a69fdfbc5727f8a9611aa07",
+    "data\\links.csv": "97ad18e4e56a09363c65676b6cb3482ce3e2cea2372a24620c1599c843325f31",
+    "data\\title.basics.tsv.gz": "1c045fc57209297ea318eb221b3ebd1bac9d600bb38f9d057fc6dd14060b3aa7",
+    "data\\title.crew.tsv.gz": "1e27e09991acf0a8bb75e70197fc0798584107429bd1c1c081db1ffc0f360098",
+    "data\\title.principals.tsv.gz": "a433e5eeb724dc2bfbbec574c4043c74c249a73f4259871f061f2ed343af20a5",
+    "data\\name.basics.tsv.gz": "be067eda55dcfe0d71bc4d3c86a6e260bbcda2ce9ea7cae5506dccfcbc170ec0"
+  },
+  "output_sha256": "d925ab72bbe0a1a025fbd432a19814108feea1c9260ede714aaacf9b13cee348",
+  "people_sha256": "97620cb5f794bb741d90c3070c24b7eda39aea4a6102f7e2d32fac7f37d98131",
+  "movies": 9742,
+  "unavailable_movie_ids": [
+    720,
+    2851,
+    4051,
+    4241,
+    5264,
+    5672,
+    6003,
+    6776,
+    32600,
+    66511,
+    79677,
+    86668,
+    95771,
+    107780,
+    127194,
+    152173,
+    172875,
+    172881,
+    172887,
+    174551,
+    182639,
+    183197,
+    183227
+  ],
+  "rejected_id_matches": [],
+  "coverage": {
+    "director": 9717,
+    "runtime": 9718,
+    "release_era": 9742,
+    "language": 0,
+    "cast": 9366
+  },
+  "display_names": 44564
+}

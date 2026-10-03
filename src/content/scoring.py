@@ -26,6 +26,9 @@ class ScoringConfig:
     max_abs_runtime_component: float = 0.25
     max_abs_release_era_component: float = 0.25
     max_abs_language_component: float = 0.25
+    # Enable after validation on enriched data; bundled MovieLens has no cast.
+    cast_weight: float = 0.0
+    max_abs_cast_component: float = 0.25
 
     def __post_init__(self) -> None:
         for name, value in vars(self).items():
@@ -153,8 +156,11 @@ def predict_one(
             feature_value=match.genre,
             strength=max(-1.0, min(1.0, match.preference / 5.0)),
             evidence_count=match.effective_evidence_count,
+            score_contribution=(match.preference / len(movie_genres)
+                                * (weighted_adjustment / component.raw_contribution)),
         )
-        for match in component.matches if enabled and match.preference != 0
+        for match in component.matches
+        if enabled and match.preference != 0 and weighted_adjustment != 0
     )
     feature_debug: list[FeatureDebug] = []
     supports = [genre_support] if enabled and movie_genres else []
@@ -164,7 +170,7 @@ def predict_one(
         (p.feature_type, p.feature_value): p for p in profile.feature_preferences
     }
     for kind in FEATURE_TYPES:
-        values = feature_values(movie, kind)
+        values = feature_values(movie, kind, profile.config.max_cast_members)
         matches = [preference_map[(kind, value)] for value in values
                    if (kind, value) in preference_map]
         raw = sum(p.preference for p in matches) / len(values) if values else 0.0
@@ -180,8 +186,9 @@ def predict_one(
             extra_reasons.extend(
                 ReasonSignal(kind, p.feature_value,
                              max(-1.0, min(1.0, p.preference / 5.0)),
-                             p.effective_evidence_count)
-                for p in matches if p.preference != 0
+                             p.effective_evidence_count,
+                             p.preference / len(values) * (adjustment / raw))
+                for p in matches if p.preference != 0 and adjustment != 0
             )
         adjustments.append(adjustment)
         feature_debug.append(FeatureDebug(
@@ -194,6 +201,15 @@ def predict_one(
     reasons += tuple(extra_reasons)
     unclamped_score = profile.baseline + sum(adjustments)
     predicted_score = max(0.0, min(5.0, unclamped_score))
+    fallback_reason = None
+    if profile.rating_count == 0:
+        fallback_reason = "cold_start_user"
+    elif not movie_genres and not any(d.candidate_values for d in feature_debug):
+        fallback_reason = "missing_metadata"
+    elif not supports:
+        fallback_reason = "no_enabled_features"
+    elif not any(supports):
+        fallback_reason = "no_matching_evidence"
     debug = None
 
     if include_debug:
@@ -223,6 +239,7 @@ def predict_one(
         confidence=float(confidence),
         reason_signals=reasons,
         debug=debug,
+        fallback_reason=fallback_reason,
     )
 
 

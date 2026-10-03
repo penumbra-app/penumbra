@@ -1,6 +1,5 @@
 import unittest
 
-from src.content.errors import UnknownUserError
 from src.content.profiles import PROFILE_VERSION, build_profile
 from src.content.reliability import ProfileConfig
 from src.content.schemas import UserRating
@@ -41,9 +40,11 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(profile.preference_for("Documentary"), 0.0)
         self.assertEqual(profile.evidence_for("Documentary"), 0)
 
-    def test_unknown_user_is_rejected(self) -> None:
-        with self.assertRaises(UnknownUserError):
-            build_profile(999, TOY_RATINGS, TOY_MOVIES)
+    def test_unknown_user_has_empty_profile(self) -> None:
+        profile = build_profile(999, TOY_RATINGS, TOY_MOVIES)
+        self.assertEqual((profile.baseline, profile.rating_count), (2.5, 0))
+        self.assertEqual(profile.genre_preferences, ())
+        self.assertEqual(profile.feature_preferences, ())
 
 
 if __name__ == "__main__":

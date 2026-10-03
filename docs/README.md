@@ -4,6 +4,7 @@
 
 - [System Architecture](architecture.md)
 - [Content Model](content-model.md)
+- [Movie Metadata Sources and Access](metadata-sources.md)
 - [Collaborative Model](collaborative-model.md)
 - [Hybrid and Reranking](hybrid-reranking.md)
 - [Group Recommendations](group-recommendations.md)
