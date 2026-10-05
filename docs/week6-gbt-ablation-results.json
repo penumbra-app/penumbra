@@ -1,0 +1,82 @@
+{
+  "stage": "validation",
+  "movies": "data\\movies-enriched.csv",
+  "content_report": "docs\\week6-content-repro.json",
+  "content_variant": "without_language",
+  "users_evaluated": 571,
+  "pairs_evaluated": 167009,
+  "experiments": {
+    "full_gbt": [
+      "collaborative",
+      "personal",
+      "content",
+      "content_confidence",
+      "quality",
+      "popularity"
+    ],
+    "no_confidence": [
+      "collaborative",
+      "personal",
+      "content",
+      "quality",
+      "popularity"
+    ],
+    "no_quality": [
+      "collaborative",
+      "personal",
+      "content",
+      "content_confidence",
+      "popularity"
+    ],
+    "no_popularity": [
+      "collaborative",
+      "personal",
+      "content",
+      "content_confidence",
+      "quality"
+    ],
+    "no_content": [
+      "collaborative",
+      "personal",
+      "quality",
+      "popularity"
+    ]
+  },
+  "results": {
+    "logistic": {
+      "pairwise_macro": 0.644602904349002,
+      "pairwise_weighted": 0.6854720404289589,
+      "ndcg_at_10": 0.9327450229026848
+    },
+    "full_gbt": {
+      "pairwise_macro": 0.6350582358046453,
+      "pairwise_weighted": 0.6781820141429504,
+      "ndcg_at_10": 0.9313864172760048
+    },
+    "no_confidence": {
+      "pairwise_macro": 0.6365396661873172,
+      "pairwise_weighted": 0.6783137435707057,
+      "ndcg_at_10": 0.931243712744445
+    },
+    "no_quality": {
+      "pairwise_macro": 0.6323820685339749,
+      "pairwise_weighted": 0.6777299426976989,
+      "ndcg_at_10": 0.9306870539137156
+    },
+    "no_popularity": {
+      "pairwise_macro": 0.6415474314803454,
+      "pairwise_weighted": 0.6760294355394021,
+      "ndcg_at_10": 0.9320053715389914
+    },
+    "no_content": {
+      "pairwise_macro": 0.6357182933643469,
+      "pairwise_weighted": 0.6760982941039105,
+      "ndcg_at_10": 0.930507465604722
+    }
+  },
+  "best_gbt_by_metric": {
+    "pairwise_macro": "no_popularity",
+    "pairwise_weighted": "no_confidence",
+    "ndcg_at_10": "no_popularity"
+  }
+}
