@@ -2,8 +2,6 @@ import argparse
 import json
 from pathlib import Path
 
-import numpy as np
-
 from src.content.profiles import ProfileConfig
 from src.content.scoring import ScoringConfig
 from src.hybrid.ml_reranker import (
@@ -30,9 +28,21 @@ def main() -> None:
     )
 
     parser.add_argument(
+        "--content-confidence",
+        action="store_true",
+        help="Include content confidence as a hybrid feature.",
+    )
+
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path("src/models/hybrid_v1_reranker.joblib"),
+    )
+
+    parser.add_argument(
+        "--personal",
+        action="store_true",
+        help="Include personal preference as a hybrid feature.",
     )
 
     args = parser.parse_args()
@@ -63,6 +73,11 @@ def main() -> None:
             report["selected_variant"],
         )
 
+    print(
+        "Content confidence:",
+        "enabled" if args.content_confidence else "disabled",
+    )
+
     print("Building hybrid reranker training dataset...")
 
     X, y, users_used = build_hybrid_training_dataset(
@@ -70,6 +85,8 @@ def main() -> None:
         movies=movies,
         scoring_config=scoring_config,
         profile_config=profile_config,
+        include_content_confidence=args.content_confidence,
+        include_personal=args.personal,
     )
 
     print(f"Users used:        {users_used:,}")

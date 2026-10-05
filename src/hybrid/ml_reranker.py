@@ -19,22 +19,34 @@ class HybridCandidate:
     movie_id: int
 
     content_score: float
+    content_confidence: float
     collaborative_score: float
+    personal_score: float
     quality_score: float
     popularity: float
 
-    def as_array(self) -> np.ndarray:
-        return np.array(
-            [
-                self.content_score,
-                self.collaborative_score,
-                self.quality_score,
-                self.popularity,
-            ],
-            dtype=float,
-        )
+    def as_array(
+        self,
+        include_content_confidence: bool = False,
+        include_personal: bool = False,
+    ) -> np.ndarray:
+        values = [self.content_score]
 
+        if include_content_confidence:
+            values.append(self.content_confidence)
 
+        values.append(self.collaborative_score)
+
+        if include_personal:
+            values.append(self.personal_score)
+
+        values.extend([
+            self.quality_score,
+            self.popularity,
+        ])
+
+        return np.array(values, dtype=float)
+    
 @dataclass(frozen=True)
 class AblationCandidate:
     movie_id: int
@@ -200,6 +212,8 @@ def train_ranker(
 def build_hybrid_pairwise_examples(
     candidates: dict[int, HybridCandidate],
     actual_ratings: dict[int, float],
+    include_content_confidence: bool = False,
+    include_personal: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     feature_rows: list[np.ndarray] = []
     labels: list[int] = []
@@ -217,8 +231,14 @@ def build_hybrid_pairwise_examples(
             if first_rating == second_rating:
                 continue
 
-            first_features = candidates[first_id].as_array()
-            second_features = candidates[second_id].as_array()
+            first_features = candidates[first_id].as_array(
+                include_content_confidence=include_content_confidence,
+                include_personal=include_personal,
+            )
+            second_features = candidates[second_id].as_array(
+                include_content_confidence=include_content_confidence,
+                include_personal=include_personal,
+            )
 
             if first_rating > second_rating:
                 difference = first_features - second_features
@@ -357,6 +377,8 @@ def build_user_hybrid_training_examples(
     movies: pd.DataFrame,
     content_model,
     collaborative_model,
+    include_content_confidence: bool = False,
+    include_personal: bool = False,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     if len(pairwise_ratings) < 2:
         return None
@@ -381,6 +403,11 @@ def build_user_hybrid_training_examples(
         movie_ids=movie_ids,
     )
 
+    personal_by_movie = {
+        movie.movie_id: movie.personal_score
+        for movie in scored_movies
+    }
+
     quality_by_movie = {
         movie.movie_id: movie.quality_score
         for movie in scored_movies
@@ -390,6 +417,9 @@ def build_user_hybrid_training_examples(
     actual_ratings: dict[int, float] = {}
 
     for movie_id in movie_ids:
+        if movie_id not in personal_by_movie:
+            continue
+
         if movie_id not in popularity:
             continue
 
@@ -409,6 +439,7 @@ def build_user_hybrid_training_examples(
             movie_id=movie_id,
             content_model=content_model,
             collaborative_model=collaborative_model,
+            personal_score=personal_by_movie[movie_id],
             quality_score=quality_by_movie[movie_id],
             popularity=popularity[movie_id],
         )
@@ -428,6 +459,8 @@ def build_user_hybrid_training_examples(
     return build_hybrid_pairwise_examples(
         candidates=candidates,
         actual_ratings=actual_ratings,
+        include_content_confidence=include_content_confidence,
+        include_personal=include_personal,
     )
 
 def build_user_ablation_training_examples(
@@ -469,6 +502,9 @@ def build_user_ablation_training_examples(
     actual_ratings = {}
 
     for movie_id in movie_ids:
+        if movie_id not in personal_by_movie:
+            continue
+
         if movie_id not in popularity:
             continue
 
@@ -605,6 +641,8 @@ def build_hybrid_training_dataset(
     movies: pd.DataFrame,
     scoring_config: ScoringConfig | None = None,
     profile_config: ProfileConfig | None = None,
+    include_content_confidence: bool = False,
+    include_personal: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, int]:
 
     user_splits: dict[
@@ -693,6 +731,8 @@ def build_hybrid_training_dataset(
             movies=movies,
             content_model=content_model,
             collaborative_model=collaborative_model,
+            include_content_confidence=include_content_confidence,
+            include_personal=include_personal,
         )
 
         if result is None:
@@ -719,6 +759,8 @@ def build_ablation_training_dataset(
     ratings: pd.DataFrame,
     movies: pd.DataFrame,
     features: list[str],
+    scoring_config: ScoringConfig | None = None,
+    profile_config: ProfileConfig | None = None,
 ) -> tuple[np.ndarray, np.ndarray, int]:
     user_splits: dict[
         int,
@@ -774,6 +816,8 @@ def build_ablation_training_dataset(
         content_model = build_content_model_from_frames(
             profile_ratings=profile,
             movies=movies,
+            scoring_config=scoring_config,
+            profile_config=profile_config,
         )
 
         result = build_user_ablation_training_examples(
@@ -957,6 +1001,7 @@ def build_hybrid_candidate(
     collaborative_model,
     quality_score: float,
     popularity: float,
+    personal_score: float,
 ) -> HybridCandidate:
     content_prediction = content_model.predict_one(
         user_id=user_id,
@@ -974,10 +1019,12 @@ def build_hybrid_candidate(
 
     return HybridCandidate(
         movie_id=movie_id,
-        content_score=content_prediction.predicted_score,
+        content_score=float(content_prediction.predicted_score),
+        content_confidence=float(content_prediction.confidence),
         collaborative_score=collaborative_score,
         quality_score=quality_score,
         popularity=popularity,
+        personal_score=float(personal_score),
     )
 
 def build_ablation_candidate(

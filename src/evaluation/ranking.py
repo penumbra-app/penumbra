@@ -78,6 +78,8 @@ def evaluate_pairwise_accuracy(
     hybrid_ranker_path: str = "src/models/hybrid_v1_reranker.joblib",
     content_scoring_config: ScoringConfig | None = None,
     content_profile_config: ProfileConfig | None = None,
+    include_content_confidence: bool = False,
+    include_personal: bool = False,
 ) -> PairwiseEvaluation:
     train_ratings_list: list[pd.DataFrame] = []
     profile_ratings_list: list[pd.DataFrame] = []
@@ -132,20 +134,24 @@ def evaluate_pairwise_accuracy(
         n_factors=20,
         learning_rate=0.005,
         regularization=0.02,
-        n_epochs=20,
+        n_epochs=40,
         prior_strength=5.0,
         random_state=42,
+        shrink_latent=True,
     )
 
-    matrix_factorization_model.fit(all_train_ratings)
+    matrix_factorization_model.fit(
+        all_train_ratings
+    )
 
     hybrid_matrix_factorization_model = BiasedMatrixFactorization(
         n_factors=20,
         learning_rate=0.005,
         regularization=0.02,
-        n_epochs=20,
+        n_epochs=40,
         prior_strength=5.0,
         random_state=42,
+        shrink_latent=True,
     )
 
     hybrid_matrix_factorization_model.fit(
@@ -156,6 +162,7 @@ def evaluate_pairwise_accuracy(
     hybrid_ranker = load_ranker(
         path=hybrid_ranker_path
     )
+
     content_user_accuracies: list[float] = []
     hybrid_user_accuracies: list[float] = []
 
@@ -231,6 +238,11 @@ def evaluate_pairwise_accuracy(
             for movie in hybrid_scored_movies
         }
 
+        hybrid_personal = {
+            movie.movie_id: movie.personal_score
+            for movie in hybrid_scored_movies
+        }
+
         reference_ratings = all_train_ratings.loc[
             all_train_ratings["userId"] != user_id
         ]
@@ -254,6 +266,9 @@ def evaluate_pairwise_accuracy(
 
         for movie in scored_movies:
             movie_id = movie.movie_id
+            if movie_id not in hybrid_personal:
+                continue
+
             if movie_id not in hybrid_mf_preds:
                 continue
 
@@ -306,6 +321,9 @@ def evaluate_pairwise_accuracy(
             hybrid_candidate = HybridCandidate(
                 movie_id=movie_id,
                 content_score=content_score,
+                content_confidence=float(
+                    content_prediction.confidence
+                ),
                 collaborative_score=float(
                     hybrid_mf_preds[movie_id]
                 ),
@@ -315,9 +333,15 @@ def evaluate_pairwise_accuracy(
                 popularity=float(
                     hybrid_popularity[movie_id]
                 ),
+                personal_score=float(
+                    hybrid_personal[movie_id]
+                ),
             )
 
-            hybrid_raw = hybrid_candidate.as_array().reshape(1, -1)
+            hybrid_raw = hybrid_candidate.as_array(
+                include_content_confidence=include_content_confidence,
+                include_personal=include_personal,
+            ).reshape(1, -1)
             hybrid_scaled = hybrid_ranker.scaler.transform(
                 hybrid_raw
             )

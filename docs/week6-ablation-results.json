@@ -1,0 +1,93 @@
+{
+  "movies": "data\\movies-enriched.csv",
+  "content_report": "docs\\week6-content-repro.json",
+  "content_variant": "without_language",
+  "users_evaluated": 600,
+  "test_pairs": 633032,
+  "benchmarks": {
+    "old_ml": {
+      "pairwise_macro": 0.63876,
+      "pairwise_weighted": 0.68516,
+      "ndcg_at_10": 0.9051
+    },
+    "imdb_hybrid": {
+      "pairwise_macro": 0.63498,
+      "pairwise_weighted": 0.68267,
+      "ndcg_at_10": 0.9069
+    }
+  },
+  "results": [
+    {
+      "name": "plus_personal",
+      "features": [
+        "collaborative",
+        "personal",
+        "content",
+        "quality",
+        "popularity"
+      ],
+      "pairwise_macro": 0.6364502037586853,
+      "pairwise_weighted": 0.6864787246142375,
+      "ndcg_at_10": 0.9080026868214691
+    },
+    {
+      "name": "personal_no_quality",
+      "features": [
+        "collaborative",
+        "personal",
+        "content",
+        "popularity"
+      ],
+      "pairwise_macro": 0.6344495622164806,
+      "pairwise_weighted": 0.6855624992101506,
+      "ndcg_at_10": 0.907951009889689
+    },
+    {
+      "name": "imdb_baseline",
+      "features": [
+        "collaborative",
+        "content",
+        "quality",
+        "popularity"
+      ],
+      "pairwise_macro": 0.6341899692278955,
+      "pairwise_weighted": 0.6850254015594788,
+      "ndcg_at_10": 0.906574505033052
+    },
+    {
+      "name": "no_quality",
+      "features": [
+        "collaborative",
+        "content",
+        "popularity"
+      ],
+      "pairwise_macro": 0.6330683127380294,
+      "pairwise_weighted": 0.6842260738793615,
+      "ndcg_at_10": 0.9061460581400733
+    },
+    {
+      "name": "personal_no_mf",
+      "features": [
+        "personal",
+        "content",
+        "quality",
+        "popularity"
+      ],
+      "pairwise_macro": 0.6329270355797764,
+      "pairwise_weighted": 0.6852931605353284,
+      "ndcg_at_10": 0.9069911799117066
+    },
+    {
+      "name": "no_mf",
+      "features": [
+        "content",
+        "quality",
+        "popularity"
+      ],
+      "pairwise_macro": 0.6325283439932902,
+      "pairwise_weighted": 0.6840136043675518,
+      "ndcg_at_10": 0.9063526397882878
+    }
+  ],
+  "best_by_macro": "plus_personal"
+}

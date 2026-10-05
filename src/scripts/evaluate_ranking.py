@@ -44,6 +44,18 @@ def main() -> None:
         default=None,
     )
 
+    parser.add_argument(
+        "--content-confidence",
+        action="store_true",
+        help="Evaluate a hybrid model trained with content confidence.",
+    )
+
+    parser.add_argument(
+        "--personal",
+        action="store_true",
+        help="Evaluate a hybrid model trained with personal preference.",
+    )
+
     args = parser.parse_args()
 
     ratings, movies = load_movielens(
@@ -72,6 +84,11 @@ def main() -> None:
             report["selected_variant"],
         )
 
+    print(
+        "Content confidence:",
+        "enabled" if args.content_confidence else "disabled",
+    )
+
     print("Dataset")
     print("=" * 72)
 
@@ -88,6 +105,8 @@ def main() -> None:
         hybrid_ranker_path=str(args.hybrid_model),
         content_scoring_config=scoring_config,
         content_profile_config=profile_config,
+        include_content_confidence=args.content_confidence,
+        include_personal=args.personal,
     )
 
     print("Pairwise Ranking Evaluation")
