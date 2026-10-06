@@ -1,0 +1,14 @@
+{
+  "identical_selected_config": true,
+  "identical_validation_metrics": 162,
+  "identical_test_metrics": [
+    "baseline",
+    "tuned_core",
+    "best_tfidf",
+    "selected",
+    "best_lsa"
+  ],
+  "identical_bootstrap": true,
+  "repeat_elapsed_seconds": 44.65313787499326,
+  "repeat_serving_parity_max_error": 8.881784197001252e-16
+}

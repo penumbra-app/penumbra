@@ -3,7 +3,7 @@
 ## Scope and completion
 
 The standalone model predicts a user's 0–5 rating from personal rating history
-and movie genres, directors, runtime, release decade, and language. It returns the existing `PredictionResult`, including a 0–1
+and movie genres, directors, runtime, release decade, language, and cast. It returns the existing `PredictionResult`, including a 0–1
 confidence score. It does not use other users' preferences.
 
 | Milestone | Deliverable | Implementation / verification |
@@ -16,6 +16,7 @@ confidence score. It does not use other users' preferences.
 | Week 2 | Evidence counts and regularization | Raw movie counts, effective evidence, shrunk genre residuals; exact arithmetic and sparse/dense tests |
 | Week 2 | Recency weighting preserving older taste | Configurable decay with positive floor; old, missing, disabled, and as-of tests |
 | Week 3 | Four metadata preferences and per-feature caps | `features.py`, enriched record adapter, feature tests |
+| Week 4 | Normalized cast, cold start, supported reasons, ranked unseen recommendations | `tests/test_week4.py`; `ContentModel.recommend`; ranked MovieLens demo |
 | Week 2 | Evidence-based confidence | Candidate support and history factor; coverage, overlap, sparse-history, and batch tests |
 
 ## Inputs and outputs
@@ -23,13 +24,13 @@ confidence score. It does not use other users' preferences.
 `UserRating(user_id, movie_id, rating, timestamp=None)` accepts finite ratings
 from 0 to 5 and optional non-negative integer Unix timestamps in seconds.
 `MovieMetadata` supplies a positive movie ID, title, and genres. Other metadata
-fields supply director, runtime, release-era, and language signals; cast remains unused.
+fields supply director, runtime, release-era, language, and cast signals.
 
 `build_profile(user_id, ratings, movies, config=None)` accepts rating iterables
 and either a movie iterable or a mapping keyed by movie ID. It selects only the
 requested user's ratings. `UserTasteProfile` stores the personal baseline,
 rating count, per-genre evidence, configuration, coverage metadata, and version
-`content-v3`. Profiles are immutable; rebuild them when training data or settings
+`content-v4`. Profiles are immutable; rebuild them when training data or settings
 change. `ContentModel` caches them for its input snapshot.
 
 The public prediction contract remains:
@@ -184,11 +185,14 @@ the rating will be correct. These defaults have not been optimized against a
 held-out evaluation set. Conflicting ratings and prediction error variance are
 not currently included in confidence.
 
-Nonzero matched preferences produce `ReasonSignal` entries for each feature type. `strength`
-is the regularized preference divided by 5 and bounded to `[-1, 1]`;
-`evidence_count` is effective evidence. Signs indicate affinity or aversion;
-strengths describe individual learned preferences, not additive final-score
-contributions or probabilities. Unknown and neutral preferences produce no reason.
+`ReasonSignal.score_contribution` allocates each feature's actual net adjustment
+(after averaging, bounds, and weighting) among matched preferences with the same
+sign, proportional to their absolute preferences. Opposing preferences already
+reduce the net adjustment; they are not emitted as separate reasons. Contributions
+sum to the total adjustment **before** the final score clamp. `strength` is this
+contribution divided by 5; `evidence_count` is effective evidence. Disabled,
+unknown, neutral, or fully cancelled features produce no reasons. These values
+explain model arithmetic, not causality or calibrated probabilities.
 
 Debug includes the baseline, candidate/matched/unknown genres, components,
 weight, unclamped score, clamping status, genre support, and effective evidence
@@ -208,8 +212,12 @@ for each matched genre.
   IDs, and limits separately per user. The limit selects IDs, not top scores.
 - Standalone and explicit catalog prediction can score a previously rated movie;
   callers select unseen candidates, or use `predict_unseen` for filtering.
-- No ratings for a user raises `UnknownUserError`; unknown catalog movie IDs
-  raise `UnknownMovieError`. No global cold-start baseline is invented.
+- No ratings for a valid user ID creates an empty profile using
+  `ProfileConfig.cold_start_score` (default 2.5), with zero confidence and no
+  reasons. Unknown catalog movie IDs still raise `UnknownMovieError`.
+- `recommend(user_id, limit=10)` scores all unseen movies and ranks by descending
+  score, descending confidence, then ascending movie ID before limiting. Cold
+  users have tied neutral scores, so their initial order is simply movie ID.
 - Missing movie metadata and empty/blank genre metadata contribute to the
   baseline but supply no genre evidence. Coverage counts report these gaps.
 - Duplicate user/movie ratings are rejected when building a profile so repeated
@@ -220,19 +228,60 @@ for each matched genre.
 
 For Week 1 arithmetic comparisons, build profiles with
 `ProfileConfig(regularization_strength=0, recency_half_life_days=None)`.
-Version 3 defaults intentionally produce different scores; rebuild saved
+Version 4 defaults intentionally produce different scores; rebuild saved
 profiles rather than treating old raw means as regularized estimates.
 
 ## Validation and integration boundary
 
-Run `python3 -m unittest discover -s tests -v` for the deterministic suite.
+Install `requirements-experiments.txt` in `.venv`, then run
+`.venv/bin/python -m unittest discover -s tests -v` for the deterministic suite.
 It checks exact profile and prediction arithmetic, baseline preservation,
 regularization, recency, confidence, error paths, serialization, single/batch
-consistency, and unseen filtering. `python3 -m src.content.demo` exercises the
+consistency, and unseen filtering. `.venv/bin/python -m src.content.demo` exercises the
 included MovieLens CSV data and prints user/movie scores and confidence.
 
 The model remains standalone and is not wired into `main.py`, the existing
 heuristic recommender, or the ML reranker. Collaborative filtering, hybrid
-ranking, diversity, group aggregation, and cast signals remain
+ranking, diversity, and group aggregation remain
 outside this content-only milestone. Any later accuracy claim should use
 training-only profiles and temporal held-out evaluation.
+
+## Cast normalization (Week 4)
+
+Cast uses the same residual-learning and shrinkage formulas as directors. Strip
+names, deduplicate ignoring case, and split each movie's residual across its
+unique actors. Effective evidence for an actor counts weighted movies, never
+repeated names. At prediction time, average preferences over all candidate
+actors, including zero for unknown actors. Neither scores nor confidence sum
+over actors, so a large ensemble cannot multiply its influence.
+`cast_weight=0.25` and `max_abs_cast_component=0.25` bound its influence; the cap
+applies both before and after weighting, including very large weights.
+Enriched records accept pipe-separated cast strings or sequences; absent, blank,
+and numeric NaN cast fields become empty tuples. The supplied CSV has no cast,
+so the runnable demo leaves cast neutral and enriched test fixtures verify it.
+
+## Text similarity and measured preset (Week 6)
+
+Optional `keywords` and `plot` metadata feed a cached per-user TF-IDF profile.
+With cosine similarity `s`, recency weight `w`, personal mean `baseline`, and
+text regularization `lambda`, its raw adjustment for a candidate is:
+
+```text
+sum(s * w * (rating - baseline)) / (sum(s * w) + lambda)
+```
+
+Zero similarity mass yields zero adjustment. Multiply by text weight and cap
+the result, add it to the unclamped core prediction, then clamp once to 0–5.
+Vocabulary, IDF, and optional latent SVD are fitted only on history movies.
+Missing text and unseen vocabulary remain neutral; titles are not substituted.
+The text reason exposes the actual contribution and weighted similarity mass.
+Text support is `mass / (mass + confidence_prior_count)`, multiplied by history
+support. Overall confidence takes the maximum of core and text confidence to
+avoid adding overlapping evidence.
+
+The content demo and `load_selected_model` use a saved validation-selected
+configuration. `ContentModel` retains its original constructor defaults.
+The [Week 6 experiment report](week6-experiments.md) documents the 162-model
+search, held-out results, uncertainty, time-filtered tag metadata, and latency.
+Keyword performance was measured on MovieLens; plot behavior was tested on
+fixtures because the dataset contains no plot summaries.

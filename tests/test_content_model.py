@@ -1,6 +1,6 @@
 import unittest
 
-from src.content.errors import UnknownMovieError, UnknownUserError
+from src.content.errors import UnknownMovieError
 from src.content.model import ContentModel
 from src.content.schemas import MovieMetadata
 from tests.fixtures import TOY_MOVIES, TOY_RATINGS
@@ -66,9 +66,10 @@ class ContentModelTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.model.predict_unseen((1,), limit=-1)
 
-    def test_unknown_user_is_rejected(self) -> None:
-        with self.assertRaisesRegex(UnknownUserError, "Unknown user ID: 999"):
-            self.model.predict((999,), (8,))
+    def test_new_user_gets_neutral_prediction(self) -> None:
+        result, = self.model.predict((999,), (8,))
+        self.assertEqual((result.predicted_score, result.confidence, result.reason_signals),
+                         (2.5, 0.0, ()))
 
     def test_unknown_movie_is_rejected(self) -> None:
         with self.assertRaisesRegex(UnknownMovieError, "Unknown movie ID: 999"):

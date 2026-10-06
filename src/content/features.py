@@ -8,7 +8,7 @@ from src.content.baselines import UserBaseline
 from src.content.genres import _unique_genres
 from src.content.schemas import MovieMetadata
 
-FEATURE_TYPES = ("director", "runtime", "release_era", "language")
+FEATURE_TYPES = ("director", "runtime", "release_era", "language", "cast")
 
 
 @dataclass(frozen=True)
@@ -22,8 +22,10 @@ class FeaturePreference:
 
 def feature_values(movie: MovieMetadata, feature_type: str) -> tuple[str, ...]:
     """Use stable buckets; absent metadata never becomes a learned category."""
-    if feature_type == "director":
-        return tuple(value.casefold() for value in _unique_genres(movie.directors))
+    if feature_type in ("director", "cast"):
+        return tuple(value.casefold() for value in _unique_genres(
+            movie.directors if feature_type == "director" else movie.cast
+        ))
     if feature_type == "runtime":
         runtime = movie.runtime_minutes
         if runtime is None:

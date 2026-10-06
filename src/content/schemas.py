@@ -51,6 +51,8 @@ class MovieMetadata:
     runtime_minutes: float | None = None
     release_year: int | None = None
     language: str | None = None
+    keywords: tuple[str, ...] = ()
+    plot: str | None = None
 
     def __post_init__(self) -> None:
         _validate_identifier(self.movie_id, "movie_id")
@@ -60,8 +62,18 @@ class MovieMetadata:
             not isinstance(value, str) for value in self.directors
         ):
             raise ValueError("directors must be a tuple of strings")
+        if not isinstance(self.cast, tuple) or any(
+            not isinstance(value, str) for value in self.cast
+        ):
+            raise ValueError("cast must be a tuple of strings")
         if self.language is not None and not isinstance(self.language, str):
             raise ValueError("language must be a string or None")
+        if not isinstance(self.keywords, tuple) or any(
+            not isinstance(value, str) for value in self.keywords
+        ):
+            raise ValueError("keywords must be a tuple of strings")
+        if self.plot is not None and not isinstance(self.plot, str):
+            raise ValueError("plot must be a string or None")
         if self.runtime_minutes is not None and (
             not isinstance(self.runtime_minutes, (int, float))
             or isinstance(self.runtime_minutes, bool)
@@ -83,8 +95,10 @@ class ReasonSignal:
     feature_value: str
     strength: float
     evidence_count: float
+    score_contribution: float = 0.0
 
     def __post_init__(self) -> None:
+        _validate_bounded_number(self.score_contribution, "score_contribution", -5, 5)
         if not self.feature_type.strip():
             raise ValueError("feature_type must be non-empty")
         if not self.feature_value.strip():

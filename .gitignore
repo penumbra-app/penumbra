@@ -4,3 +4,15 @@ __pycache__/
 *.pyc
 .env
 .vscode/
+.env.*
+!.env.example
+data/tmdb_cache/
+data/movies_enriched.csv
+data/movies_enriched.csv.metadata.json
+reports/tmdb-experiment/
+
+# Local datasets, per-user evaluation outputs, and private transfer bundles.
+data/*.csv
+reports/**/test_users.csv
+private_exports/
+data/private-handoff-manifest.json

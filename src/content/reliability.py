@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from src.content.schemas import UserRating
+from src.content.schemas import UserRating, _validate_bounded_number
 
 
 @dataclass(frozen=True)
@@ -14,8 +14,10 @@ class ProfileConfig:
     recency_half_life_days: float | None = 365.0
     minimum_recency_weight: float = 0.5
     reference_timestamp: int | None = None
+    cold_start_score: float = 2.5
 
     def __post_init__(self) -> None:
+        _validate_bounded_number(self.cold_start_score, "cold_start_score", 0, 5)
         for name in ("regularization_strength", "minimum_recency_weight"):
             value = getattr(self, name)
             if (

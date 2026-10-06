@@ -1,8 +1,13 @@
-from load_data import load_movielens
+import argparse
+
+if __package__:
+    from src.load_data import load_movielens
+else:
+    from load_data import load_movielens
 
 
-def explore() -> None:
-    ratings, movies = load_movielens("data")
+def explore(data_directory="data", movies_file=None) -> None:
+    ratings, movies = load_movielens(data_directory, movies_file=movies_file)
 
     rated_movie_ids = ratings["movieId"].nunique()
     total_movie_ids = movies["movieId"].nunique()
@@ -16,6 +21,16 @@ def explore() -> None:
     print(f"Movies with at least one rating: {rated_movie_ids:,}")
     print(f"Movies with no ratings: {movies_with_no_ratings:,}")
     print(f"Movies with exactly one rating: {movies_with_one_rating:,}")
+
+    fields = [field for field in ("plot", "keywords", "directors", "cast", "runtime_minutes", "language")
+              if field in movies.columns]
+    if fields:
+        print("\nMovie metadata coverage:")
+        for field in fields:
+            present = movies[field].fillna("").astype(str).str.strip().ne("")
+            print(f"{field}: {present.sum():,}/{len(movies):,} ({present.mean():.1%})")
+        if "metadata_temporality" in movies and movies["metadata_temporality"].eq("retrospective").any():
+            print("TMDB metadata is a current snapshot; historical availability is unverified.")
 
     print(ratings["rating"].value_counts().sort_index())
 
@@ -41,4 +56,8 @@ def explore() -> None:
 
 
 if __name__ == "__main__":
-    explore()
+    parser = argparse.ArgumentParser(description="Inspect MovieLens ratings and metadata coverage.")
+    parser.add_argument("--data-dir", default="data")
+    parser.add_argument("--movies-file", help="Optional enriched CSV; defaults to DATA_DIR/movies.csv")
+    args = parser.parse_args()
+    explore(args.data_dir, args.movies_file)

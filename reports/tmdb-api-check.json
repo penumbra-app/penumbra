@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-10-06T16:54:16.221225+00:00",
+  "tests_passed": 133,
+  "live_enrichment": {
+    "enriched_movies": 100,
+    "movies": 9742,
+    "coverage": {
+      "plot": 100,
+      "keywords": 96,
+      "directors": 100,
+      "cast": 100,
+      "runtime_minutes": 100,
+      "language": 100
+    },
+    "unmapped": 8,
+    "deferred": 9634,
+    "output_sha256": "95fbf5826bb576bb53e52fffaeea21af67c6bcefac1540642ff4dd370fd0edfa",
+    "fetched_at_min": "2026-10-06T16:53:50.748553+00:00",
+    "fetched_at_max": "2026-10-06T16:54:16.120525+00:00"
+  },
+  "cache_only_csv_identical": true,
+  "explorer_and_demo_passed": true,
+  "evaluation_smoke": {
+    "completed": true,
+    "metadata_temporality": "retrospective",
+    "users": 603,
+    "serving_parity_max_error": 8.881784197001252e-16
+  },
+  "serving_preset_changed": false
+}

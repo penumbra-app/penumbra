@@ -4,7 +4,56 @@ Flick is an in-progress personalized movie recommendation system built on the Mo
 
 The project combines a heuristic recommendation pipeline with a supervised machine-learning reranker that learns how to order movies from user preference data.
 
-## Current Results
+## Data and team handoff
+
+Dataset CSVs, enriched metadata, API credentials, and per-user reports are local-only.
+Restore the private data bundle before running data-dependent commands. See
+[the hybrid team handoff](docs/hybrid-handoff.md) for setup and integration.
+The completed enrichment selected a content model with **57.47% pairwise accuracy**
+and **0.7737 NDCG@10**; see [the full report](reports/tmdb-full/results.json).
+
+## Week 6: measured content improvements
+
+The standalone content model now supports keyword and plot TF-IDF, optional LSA
+embeddings, and a reproducible validation/test experiment. Comparing **162
+configurations** selected a small TF-IDF unigram/bigram blend. On **603 held-out
+users**, pairwise accuracy changed from **55.18% to 55.36%**, NDCG@10 from
+**0.7545 to 0.7563**, and RMSE from **1.0302 to 1.0265**. The accuracy improvement
+is small and its 95% confidence interval includes zero.
+
+The content demo uses the saved validation-selected preset. Keyword experiments
+use time-filtered MovieLens tags; plot support is fixture-tested because real
+plots are not bundled. See [the experiment report](docs/week6-experiments.md)
+for every configuration, limitations, latency, and reproduction instructions.
+These content-model results use a different protocol from the legacy reranker
+below and are not directly comparable.
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-experiments.txt
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m src.content.demo --user-id 414
+.venv/bin/python -m src.evaluate_content
+```
+
+## TMDB enrichment
+
+Add your TMDB API Read Access Token to the ignored `.env` file using
+[`.env.example`](.env.example), then fetch movie metadata:
+
+```bash
+.venv/bin/python -m src.enrich_movies --limit 100
+.venv/bin/python -m src.explore_data --movies-file data/movies_enriched.csv
+.venv/bin/python -m src.content.demo --user-id 414 --movies-file data/movies_enriched.csv
+```
+
+This adds plot overviews, keywords, cast, directors, runtime, and language using
+MovieLens's official TMDB ID mappings. Successful responses are cached; omit
+`--limit` to fetch the remaining catalog. See [setup and evaluation instructions](docs/tmdb-enrichment.md).
+
+This product uses the TMDB API but is not endorsed or certified by TMDB.
+
+## Legacy reranker results
 
 The learned reranker was evaluated against the original heuristic ranking system using held-out user ratings.
 
@@ -184,16 +233,17 @@ Week 2 adds evidence-based regularization, configurable recency weighting that p
 
 The standalone model is not yet connected to `main.py`, the existing heuristic recommender, or the ML reranker.
 
-Run its tests with:
+Run the full suite, including text experiments, after installing the experiment
+dependencies above:
 
 ```bash
-python3 -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
 Inspect a real MovieLens user's profile and three unseen-movie calculations with:
 
 ```bash
-python3 -m src.content.demo
+.venv/bin/python -m src.content.demo
 ```
 
 ### Key Files
@@ -322,3 +372,14 @@ Planned work includes:
 ## Status
 
 Flick is currently under active development.
+
+## Week 4 — Flick V1 content recommendations
+
+The standalone content model now includes cast with shared credit and a small
+score cap, neutral handling of missing metadata, cold-start profiles, and reasons
+that report evidence and score contributions. `ContentModel.recommend(user_id,
+limit=10)` ranks unseen movies; `.venv/bin/python -m src.content.demo` runs it on MovieLens.
+This path is separate from the existing ML reranker in `main.py`.
+See [the content model guide](src/content/README.md#week-4-complete-single-user-recommendations)
+for usage and simple explanations. Cast requires enriched metadata; the bundled
+MovieLens CSV does not include it.

@@ -56,8 +56,18 @@ def movie_metadata_from_record(record: Mapping[str, Any]) -> MovieMetadata:
         directors = parse_genres(directors)
     elif directors is not None:
         directors = tuple(directors)
+    cast = _optional_metadata(record.get("cast"))
+    if isinstance(cast, str):
+        cast = parse_genres(cast)
+    elif cast is not None:
+        cast = tuple(cast)
     runtime = _optional_metadata(record.get("runtime_minutes"))
     language = _optional_metadata(record.get("language"))
+    keywords = _optional_metadata(record.get("keywords"))
+    if isinstance(keywords, str):
+        keywords = parse_genres(keywords)
+    elif keywords is not None:
+        keywords = tuple(keywords)
 
     return MovieMetadata(
         movie_id=int(record["movieId"]),
@@ -65,8 +75,11 @@ def movie_metadata_from_record(record: Mapping[str, Any]) -> MovieMetadata:
         genres=parse_genres(record.get("genres")),
         release_year=release_year,
         directors=directors or (),
+        cast=cast or (),
         runtime_minutes=float(runtime) if runtime is not None else None,
         language=language,
+        keywords=keywords or (),
+        plot=_optional_metadata(record.get("plot")),
     )
 
 

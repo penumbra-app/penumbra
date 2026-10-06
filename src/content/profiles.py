@@ -4,14 +4,13 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from src.content.baselines import calculate_user_baseline
-from src.content.errors import UnknownUserError
 from src.content.features import FeaturePreference, aggregate_feature_preferences
 from src.content.genres import GenrePreference, _unique_genres, aggregate_genre_preferences
 from src.content.reliability import ProfileConfig, rating_weights
-from src.content.schemas import MovieMetadata, UserRating
+from src.content.schemas import MovieMetadata, UserRating, _validate_identifier
 
 
-PROFILE_VERSION = "content-v3"
+PROFILE_VERSION = "content-v4"
 
 
 @dataclass(frozen=True)
@@ -79,17 +78,22 @@ def build_profile(
     movies: Mapping[int, MovieMetadata] | Iterable[MovieMetadata],
     config: ProfileConfig | None = None,
 ) -> UserTasteProfile:
+    _validate_identifier(user_id, "user_id")
+    active_config = config or ProfileConfig()
+    movies_by_id = _index_movies(movies)
     user_ratings = tuple(
         rating for rating in ratings if rating.user_id == user_id
     )
     if not user_ratings:
-        raise UnknownUserError(user_id)
+        return UserTasteProfile(
+            user_id, float(active_config.cold_start_score), 0, (), PROFILE_VERSION,
+            ProfileMetadata(0, 0, 0, 0, 0, active_config.reference_timestamp),
+            active_config,
+        )
     if len({rating.movie_id for rating in user_ratings}) != len(user_ratings):
         raise ValueError("Duplicate ratings for a user and movie are not supported")
 
-    active_config = config or ProfileConfig()
     weights, reference = rating_weights(user_ratings, active_config)
-    movies_by_id = _index_movies(movies)
     baseline = calculate_user_baseline(user_ratings)
     preferences = aggregate_genre_preferences(
         baseline, movies_by_id, rating_weights=weights,

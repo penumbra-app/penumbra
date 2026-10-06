@@ -1,4 +1,6 @@
 from src.content.features import FeaturePreference, feature_values
+from src.content.text import TextConfig, TextProfile
+from src.content.selection import load_selected_model
 from src.content.baselines import (
     RatingResidual,
     UserBaseline,
@@ -37,6 +39,9 @@ from src.content.schemas import (
 )
 
 __all__ = [
+    "load_selected_model",
+    "TextConfig",
+    "TextProfile",
     "FeatureDebug",
     "FeaturePreference",
     "feature_values",
