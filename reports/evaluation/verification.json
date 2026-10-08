@@ -1,0 +1,12 @@
+{
+  "tests_passed": 155,
+  "data_free_clean_directory_tests_passed": true,
+  "full_development_users": 607,
+  "report_hashes_and_metric_aggregation_verified": true,
+  "label_free_export_verified": true,
+  "early_confirmation_guard_verified": true,
+  "synthetic_confirmation_lifecycle_test_passed": true,
+  "github_actions_executed": false,
+  "github_actions_note": "workflow added; local equivalent verified, not yet pushed",
+  "live_future_confirmation": "not run; genuinely new cohort/outcomes required"
+}

@@ -14,6 +14,10 @@ and **0.7737 NDCG@10**; see [the full report](reports/tmdb-full/results.json).
 
 ## Week 6: measured content improvements
 
+For current evaluation, use the [full-catalog and future-confirmation workflow](docs/evaluation-environment.md).
+For the new dataset, follow the [MovieLens 32M preparation and reserved evaluation guide](docs/movielens-32m.md).
+The historical metrics below remain development/regression evidence.
+
 The standalone content model now supports keyword and plot TF-IDF, optional LSA
 embeddings, and a reproducible validation/test experiment. Comparing **162
 configurations** selected a small TF-IDF unigram/bigram blend. On **603 held-out

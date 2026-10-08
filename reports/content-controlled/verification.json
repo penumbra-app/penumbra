@@ -1,0 +1,8 @@
+{
+  "tests_passed": 142,
+  "baseline_parity": true,
+  "offline_encoder_cache_verified": true,
+  "input_and_source_hashes_verified": true,
+  "prediction_arrays_finite_and_bounded": true,
+  "aggregate_metrics_recomputed_from_private_user_rows": true
+}

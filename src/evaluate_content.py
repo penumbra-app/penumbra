@@ -1,4 +1,4 @@
-"""Reproducible Week 6 validation search and untouched final holdout report.
+"""Reproducible Week 6 validation search on an already-inspected historical split.
 
 Run: python -m src.evaluate_content --output-dir reports/week6
 """
@@ -329,6 +329,7 @@ def run(data_directory, output_directory, movies_file=None):
             "embeddings": "LSA fit on training TF-IDF; not a pretrained semantic model" if lsa_rows else "skipped: TF-IDF did not improve validation over tuned core",
             "metrics": "user-macro pairwise and NDCG@10 (exponential gains, averaged score ties); RMSE=sqrt(mean per-user MSE); MAE=user-macro",
             "candidate_set": "rated held-out movies only; not full-catalog retrieval evaluation",
+            "test_status": "previously inspected historical holdout; development evidence only",
             "skipped_users": skipped, "seed": 42,
             "metadata_temporality": metadata["temporality"],
         },

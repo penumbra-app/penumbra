@@ -1,5 +1,9 @@
 # Content model handoff to the hybrid team
 
+Use the [evaluation environment](evaluation-environment.md) for the current
+full-catalog protocol, private candidate/history export, confirmation guards,
+and complete-request performance measurements.
+
 ## Public code and private inputs
 
 Commit source, tests, aggregate evaluation reports, configuration, and this guide.
@@ -103,4 +107,6 @@ enriched-baseline interval in the report includes zero; text's incremental benef
 alone is not established. Current TMDB metadata is retrospective, the existing
 test set has been inspected, and candidates are held-out rated movies rather than
 the full catalog. Use a fresh holdout for confirmatory hybrid evaluation.
-Shared-catalog TF-IDF and pretrained semantic embeddings are not implemented.
+Shared-catalog TF-IDF and pretrained semantic embeddings are available in the
+separate [controlled experiment](controlled-content-experiments.md); the serving
+preset still uses per-user TF-IDF.

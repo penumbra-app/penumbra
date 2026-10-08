@@ -1,0 +1,11 @@
+{
+  "legacy_movies": 9742,
+  "reused_movies": 9448,
+  "omitted_movies": 294,
+  "omission_reasons": {
+    "no_external_identity_match": 275,
+    "external_identities_disagree": 4,
+    "matched_identity_has_conflicting_other_identifier": 5,
+    "ambiguous_external_identity": 10
+  }
+}

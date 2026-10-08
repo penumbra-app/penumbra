@@ -16,3 +16,14 @@ data/*.csv
 reports/**/test_users.csv
 private_exports/
 data/private-handoff-manifest.json
+.cache/
+reports/content-controlled/predictions.npz
+.cache-*.log
+reports/**/request_samples.csv
+
+# MovieLens 32M source ZIP and private prepared cohorts / staging.
+data/imports/
+data/ml32m/
+data/.ml32m-*/
+ml-32m.zip
+ml-32m/

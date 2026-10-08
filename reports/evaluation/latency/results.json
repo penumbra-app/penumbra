@@ -1,0 +1,120 @@
+{
+  "protocol": {
+    "scope": "public ContentModel.recommend over full current catalog; top 10 and JSON serialization",
+    "cold": "fresh subprocess per request; includes interpreter startup, CSV/config loading, profile fit, scoring, sorting, serialization, IPC",
+    "warm": "in-process request after model/profile warm-up; includes scoring, sorting and serialization",
+    "concurrency": "finite burst, shared warmed models; latency includes thread-pool queue time",
+    "limits": "local microbenchmark; small cold sample, no HTTP stack, no production SLO claim",
+    "cold_repeats_per_history": 3,
+    "warm_repeats_per_history": 10,
+    "concurrent_rounds": 3,
+    "workers": 2,
+    "sample_history_counts": {
+      "short": 12,
+      "median": 43,
+      "long": 1618
+    },
+    "catalog_size": 9742,
+    "response_parity": true
+  },
+  "latency": {
+    "cold_process": {
+      "requests": 9,
+      "p50_ms": 1758.0436670104973,
+      "p95_ms": 6282.934424991254,
+      "max_ms": 6293.361124990042
+    },
+    "warm_request": {
+      "requests": 30,
+      "p50_ms": 577.0326670026407,
+      "p95_ms": 5338.793356396491,
+      "max_ms": 5422.48958395794
+    },
+    "concurrent_queued_request": {
+      "requests": 9,
+      "p50_ms": 9888.902875012718,
+      "p95_ms": 16688.047216797713,
+      "max_ms": 18747.90324998321
+    }
+  },
+  "latency_by_history": {
+    "short": {
+      "cold_process": {
+        "requests": 3,
+        "p50_ms": 1623.8067079684697,
+        "p95_ms": 1707.0084076956846,
+        "max_ms": 1716.2530409987085
+      },
+      "warm_request": {
+        "requests": 10,
+        "p50_ms": 447.942166501889,
+        "p95_ms": 484.38035829458386,
+        "max_ms": 485.4658329859376
+      },
+      "concurrent_queued_request": {
+        "requests": 3,
+        "p50_ms": 1628.7731669726782,
+        "p95_ms": 11169.402491976505,
+        "max_ms": 12229.472416976932
+      }
+    },
+    "median": {
+      "cold_process": {
+        "requests": 3,
+        "p50_ms": 1758.0436670104973,
+        "p95_ms": 1761.1942294810433,
+        "max_ms": 1761.5442919777706
+      },
+      "warm_request": {
+        "requests": 10,
+        "p50_ms": 577.0326670026407,
+        "p95_ms": 612.2304918506416,
+        "max_ms": 613.2264169864357
+      },
+      "concurrent_queued_request": {
+        "requests": 3,
+        "p50_ms": 2339.343000028748,
+        "p95_ms": 12472.371150320396,
+        "max_ms": 13598.263167019468
+      }
+    },
+    "long": {
+      "cold_process": {
+        "requests": 3,
+        "p50_ms": 6267.294374993071,
+        "p95_ms": 6290.754449990345,
+        "max_ms": 6293.361124990042
+      },
+      "warm_request": {
+        "requests": 10,
+        "p50_ms": 5236.258708988316,
+        "p95_ms": 5385.610808667843,
+        "max_ms": 5422.48958395794
+      },
+      "concurrent_queued_request": {
+        "requests": 3,
+        "p50_ms": 13018.563167017419,
+        "p95_ms": 18174.969241686627,
+        "max_ms": 18747.90324998321
+      }
+    }
+  },
+  "concurrent_requests_per_second": 0.47973656812966914,
+  "cold_process_peak_rss_mb": {
+    "max": 237.9375,
+    "median": 227.078125
+  },
+  "warm_process_peak_rss_mb": 284.515625,
+  "memory_note": "OS process lifetime high-water RSS, not allocation delta; concurrent cold workers are not measured",
+  "input_sha256": {
+    "data/movies_enriched.csv": "6bf4deb2a5eac73a4911e71296e6ea6ad2d957f53df49d2eddb9b63df8a6d06c",
+    "data/ratings.csv": "80da8b3393dae325bbba5a31f291a6ba55d8d4f4396de3c456f2c1635b1b70e8",
+    "data/tags.csv": "92a9f8bb7916dceef6151209845788c3643f794dfa79d1feaec7121b5960399d",
+    "reports/tmdb-full/selected_config.json": "7b6bbfaad010c70d51cff5b33de10e5ca87311c17169f3307c40943837233ead"
+  },
+  "environment": {
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "python": "3.13.7",
+    "blas_threads": 1
+  }
+}

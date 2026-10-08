@@ -1,0 +1,18 @@
+{
+  "users": 1000,
+  "history_ratings": 126870,
+  "outcome_ratings": 31496,
+  "history_count_percentiles": {
+    "min": 16.0,
+    "p25": 32.0,
+    "median": 65.0,
+    "p75": 149.0,
+    "max": 1440.0
+  },
+  "prediction_cutoff_utc_range": [
+    "2018-09-27T05:49:24+00:00",
+    "2023-10-11T20:16:40+00:00"
+  ],
+  "timestamp_split_violations": 0,
+  "history_outcome_pair_overlap": 0
+}

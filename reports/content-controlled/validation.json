@@ -1,0 +1,367 @@
+[
+  {
+    "candidate": {
+      "name": "personal_tfidf",
+      "representation": "personal_tfidf",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5997186532289082,
+      "ndcg_at_10": 0.7795133581391028,
+      "rmse": 0.9702741455193556,
+      "mae": 0.7422201537159161,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 5.327885874983622,
+    "mean_abs_text_adjustment": 0.03862719520231246,
+    "text_adjustment_std": 0.049548715433060636,
+    "nonzero_similarity_fraction": 0.9964453789926905
+  },
+  {
+    "candidate": {
+      "name": "shared_tfidf",
+      "representation": "shared_tfidf",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5934271038811657,
+      "ndcg_at_10": 0.7779386851412582,
+      "rmse": 0.9720034475840182,
+      "mae": 0.7438480683354851,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.717314500012435,
+    "mean_abs_text_adjustment": 0.03429369142764437,
+    "text_adjustment_std": 0.045575142642575985,
+    "nonzero_similarity_fraction": 0.9964453789926905
+  },
+  {
+    "candidate": {
+      "name": "fields-plot0",
+      "representation": "fields-plot0",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5948332745417302,
+      "ndcg_at_10": 0.7766298685266453,
+      "rmse": 0.9705354480846161,
+      "mae": 0.7426740793863811,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.6467323749966454,
+    "mean_abs_text_adjustment": 0.04698395384713937,
+    "text_adjustment_std": 0.06367066672227971,
+    "nonzero_similarity_fraction": 0.9868829478321819
+  },
+  {
+    "candidate": {
+      "name": "fields-plot0.25",
+      "representation": "fields-plot0.25",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5957888500454456,
+      "ndcg_at_10": 0.7775462767277896,
+      "rmse": 0.9713862480206349,
+      "mae": 0.743459867996461,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.5999113750003744,
+    "mean_abs_text_adjustment": 0.03922031025246544,
+    "text_adjustment_std": 0.053560146890005066,
+    "nonzero_similarity_fraction": 0.9963953139080806
+  },
+  {
+    "candidate": {
+      "name": "fields-plot0.5",
+      "representation": "fields-plot0.5",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.592721098407266,
+      "ndcg_at_10": 0.7771429268441971,
+      "rmse": 0.9724289105526949,
+      "mae": 0.7444019834794596,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.597229500010144,
+    "mean_abs_text_adjustment": 0.03185246330198886,
+    "text_adjustment_std": 0.043766018726532394,
+    "nonzero_similarity_fraction": 0.9963953139080806
+  },
+  {
+    "candidate": {
+      "name": "fields-plot0.75",
+      "representation": "fields-plot0.75",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5900181042661976,
+      "ndcg_at_10": 0.776918553346317,
+      "rmse": 0.9737049514009823,
+      "mae": 0.7455415972710772,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.5581905840081163,
+    "mean_abs_text_adjustment": 0.026092988867744377,
+    "text_adjustment_std": 0.03595554106187877,
+    "nonzero_similarity_fraction": 0.9963953139080806
+  },
+  {
+    "candidate": {
+      "name": "fields-plot1",
+      "representation": "fields-plot1",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5853886619471683,
+      "ndcg_at_10": 0.7759183736268277,
+      "rmse": 0.9752998613897836,
+      "mae": 0.7469152297940046,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.5595077500038315,
+    "mean_abs_text_adjustment": 0.025418417290389416,
+    "text_adjustment_std": 0.034965809368811766,
+    "nonzero_similarity_fraction": 0.9935416040853109
+  },
+  {
+    "candidate": {
+      "name": "minilm",
+      "representation": "minilm",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5892131751346966,
+      "ndcg_at_10": 0.7768735395176546,
+      "rmse": 0.9708666615690376,
+      "mae": 0.7427022364878545,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.4368407500151079,
+    "mean_abs_text_adjustment": 0.03485914436321592,
+    "text_adjustment_std": 0.045418103877637,
+    "nonzero_similarity_fraction": 0.9965955742465205
+  },
+  {
+    "candidate": {
+      "name": "qwen",
+      "representation": "qwen",
+      "scorer": "similarity"
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.59213970316144,
+      "ndcg_at_10": 0.7785699516646256,
+      "rmse": 0.9726512882309388,
+      "mae": 0.7446122813264701,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 0.4501701669942122,
+    "mean_abs_text_adjustment": 0.018309234941093343,
+    "text_adjustment_std": 0.025288594507433114,
+    "nonzero_similarity_fraction": 0.9965955742465205
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+ridge-a0.1",
+      "representation": "personal_tfidf",
+      "scorer": "ridge",
+      "alpha": 0.1
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5827262163702405,
+      "ndcg_at_10": 0.7694655189041936,
+      "rmse": 0.9665056780696804,
+      "mae": 0.7364354778651407,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 6.133538541995222,
+    "mean_abs_text_adjustment": 0.22260378704212797,
+    "text_adjustment_std": 0.2735896122762569,
+    "nonzero_similarity_fraction": null
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+ridge-a1",
+      "representation": "personal_tfidf",
+      "scorer": "ridge",
+      "alpha": 1.0
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5918618526384892,
+      "ndcg_at_10": 0.7758967128356217,
+      "rmse": 0.9625377927353016,
+      "mae": 0.7343356572251335,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 5.807887833012501,
+    "mean_abs_text_adjustment": 0.14110854336095843,
+    "text_adjustment_std": 0.18446391452237274,
+    "nonzero_similarity_fraction": null
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+ridge-a10",
+      "representation": "personal_tfidf",
+      "scorer": "ridge",
+      "alpha": 10.0
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5942673505808342,
+      "ndcg_at_10": 0.7779264732672403,
+      "rmse": 0.9724842617608694,
+      "mae": 0.7444458737290538,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 5.994268582988298,
+    "mean_abs_text_adjustment": 0.03257986337448767,
+    "text_adjustment_std": 0.04526521170575766,
+    "nonzero_similarity_fraction": null
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+ridge-a100",
+      "representation": "personal_tfidf",
+      "scorer": "ridge",
+      "alpha": 100.0
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5853801323293922,
+      "ndcg_at_10": 0.7735497283719074,
+      "rmse": 0.9766567214772894,
+      "mae": 0.7483146531809982,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 6.497311708983034,
+    "mean_abs_text_adjustment": 0.004018636003453054,
+    "text_adjustment_std": 0.005714524554112522,
+    "nonzero_similarity_fraction": null
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+top5",
+      "representation": "personal_tfidf",
+      "scorer": "similarity",
+      "top_k": 5
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5933202133842729,
+      "ndcg_at_10": 0.7762728354879365,
+      "rmse": 0.9700820288693472,
+      "mae": 0.7425907067854247,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 7.012545000005048,
+    "mean_abs_text_adjustment": 0.03751149935581349,
+    "text_adjustment_std": 0.05114407854680215,
+    "nonzero_similarity_fraction": 0.9964453789926905
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+top10",
+      "representation": "personal_tfidf",
+      "scorer": "similarity",
+      "top_k": 10
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5974639895683836,
+      "ndcg_at_10": 0.7785061002646301,
+      "rmse": 0.9696347735571179,
+      "mae": 0.7420323412874138,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 5.61157320800703,
+    "mean_abs_text_adjustment": 0.04253328523999209,
+    "text_adjustment_std": 0.05723254019188971,
+    "nonzero_similarity_fraction": 0.9964453789926905
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+top20",
+      "representation": "personal_tfidf",
+      "scorer": "similarity",
+      "top_k": 20
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5982193767413442,
+      "ndcg_at_10": 0.7791637851564974,
+      "rmse": 0.9699705525142527,
+      "mae": 0.7421026084924288,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 6.026933832996292,
+    "mean_abs_text_adjustment": 0.0454133174701895,
+    "text_adjustment_std": 0.0605162227489781,
+    "nonzero_similarity_fraction": 0.9964453789926905
+  },
+  {
+    "candidate": {
+      "name": "personal_tfidf+top50",
+      "representation": "personal_tfidf",
+      "scorer": "similarity",
+      "top_k": 50
+    },
+    "metrics": {
+      "pairwise_accuracy": 0.5995918899810295,
+      "ndcg_at_10": 0.7805039655318723,
+      "rmse": 0.9699754030443142,
+      "mae": 0.7419888699839036,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    },
+    "text_scoring_seconds": 6.031853791006142,
+    "mean_abs_text_adjustment": 0.045564349494925785,
+    "text_adjustment_std": 0.06023388526661931,
+    "nonzero_similarity_fraction": 0.9964453789926905
+  }
+]

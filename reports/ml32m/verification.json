@@ -1,0 +1,26 @@
+{
+  "automated_tests_passed": 166,
+  "cohort_user_overlap": 0,
+  "frozen_inputs_and_source_unchanged": true,
+  "reserved_claim_status": "complete",
+  "cohorts": {
+    "development": {
+      "users": 1000,
+      "history_ratings": 126870,
+      "outcome_ratings": 31496,
+      "eligible_positive_users": 991,
+      "aggregates_recomputed_from_per_user_output": true,
+      "timestamps_and_history_outcome_disjointness_verified": true,
+      "results_sha256": "0e516e7cfbccb8a4af44316edf036f29df237c611e672b96d5353dbc80a5a48a"
+    },
+    "reserved": {
+      "users": 1000,
+      "history_ratings": 130532,
+      "outcome_ratings": 32478,
+      "eligible_positive_users": 987,
+      "aggregates_recomputed_from_per_user_output": true,
+      "timestamps_and_history_outcome_disjointness_verified": true,
+      "results_sha256": "ee5734cbea83cca1b4a829a99bca161925c2f57b07583981f46f22105be40431"
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "baseline_preset": {
+    "schema_version": 1,
+    "objective": "macro validation pairwise accuracy; RMSE tie-break",
+    "candidate": {
+      "name": "baseline+tfidf-n1-df1-d32-r5-w1",
+      "profile": {
+        "regularization_strength": 5.0,
+        "recency_half_life_days": 365.0,
+        "minimum_recency_weight": 0.5,
+        "reference_timestamp": null,
+        "cold_start_score": 2.5
+      },
+      "scoring": {
+        "genre_weight": 1.0,
+        "max_abs_genre_component": 1.0,
+        "confidence_prior_count": 5.0,
+        "cast_weight": 0.25,
+        "max_abs_cast_component": 0.25,
+        "director_weight": 0.5,
+        "runtime_weight": 0.25,
+        "release_era_weight": 0.25,
+        "language_weight": 0.25,
+        "max_abs_director_component": 0.5,
+        "max_abs_runtime_component": 0.25,
+        "max_abs_release_era_component": 0.25,
+        "max_abs_language_component": 0.25
+      },
+      "text": {
+        "source": "combined",
+        "representation": "tfidf",
+        "ngram_max": 1,
+        "min_df": 1,
+        "max_features": 10000,
+        "latent_dimensions": 32,
+        "regularization_strength": 5.0,
+        "weight": 1.0,
+        "max_adjustment": 0.5
+      }
+    },
+    "validation_metrics": {
+      "pairwise_accuracy": 0.5997186532289082,
+      "ndcg_at_10": 0.7795133581391028,
+      "rmse": 0.9702741455193556,
+      "mae": 0.7422201537159161,
+      "users": 603,
+      "ranking_users": 595,
+      "ratings": 19974,
+      "pairs": 940946
+    }
+  },
+  "representation_selected_on_validation": "personal_tfidf",
+  "family_selections": {
+    "baseline": {
+      "name": "personal_tfidf",
+      "representation": "personal_tfidf",
+      "scorer": "similarity"
+    },
+    "shared_catalog": {
+      "name": "shared_tfidf",
+      "representation": "shared_tfidf",
+      "scorer": "similarity"
+    },
+    "separate_fields": {
+      "name": "fields-plot0.25",
+      "representation": "fields-plot0.25",
+      "scorer": "similarity"
+    },
+    "semantic": {
+      "name": "qwen",
+      "representation": "qwen",
+      "scorer": "similarity"
+    },
+    "ridge": {
+      "name": "personal_tfidf+ridge-a10",
+      "representation": "personal_tfidf",
+      "scorer": "ridge",
+      "alpha": 10.0
+    },
+    "top_k": {
+      "name": "personal_tfidf+top50",
+      "representation": "personal_tfidf",
+      "scorer": "similarity",
+      "top_k": 50
+    }
+  },
+  "overall_selected": {
+    "name": "personal_tfidf",
+    "representation": "personal_tfidf",
+    "scorer": "similarity"
+  },
+  "objective": "macro validation pairwise accuracy; RMSE then name tie-break"
+}

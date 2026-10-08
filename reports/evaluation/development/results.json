@@ -1,0 +1,341 @@
+{
+  "protocol": {
+    "primary_metric": "ndcg_at_10",
+    "ks": [
+      10,
+      20
+    ],
+    "positive_rating_threshold": 4.0,
+    "selection": "fixed preset; no tuning on this run",
+    "relevance": "known positives only; unobserved items are unjudged, not confirmed negatives",
+    "denominator": "eligible held-out positives; all-observed-positive recall also reported",
+    "ties": "score descending, movie ID ascending for every model",
+    "secondary_metrics": "exploratory; primary inference is NDCG@10 only",
+    "mode": "development",
+    "test_status": "previously inspected dataset; not confirmation",
+    "split": "per-user first 60% history, next 20% development outcomes; timestamp groups intact",
+    "catalog_availability": "first observed rating <= each prediction cutoff; conservative proxy",
+    "metadata_temporality": "retrospective snapshot; not a historical metadata backtest",
+    "skipped_users": 3,
+    "smoke_limit": null
+  },
+  "input_sha256": {
+    "data/movies_enriched.csv": "6bf4deb2a5eac73a4911e71296e6ea6ad2d957f53df49d2eddb9b63df8a6d06c",
+    "data/ratings.csv": "80da8b3393dae325bbba5a31f291a6ba55d8d4f4396de3c456f2c1635b1b70e8",
+    "data/tags.csv": "92a9f8bb7916dceef6151209845788c3643f794dfa79d1feaec7121b5960399d",
+    "reports/tmdb-full/selected_config.json": "7b6bbfaad010c70d51cff5b33de10e5ca87311c17169f3307c40943837233ead"
+  },
+  "source_sha256": {
+    "src/content/__init__.py": "c984b599a814da9b6d7d7d21c116b506a30f3faa14e52fe42bd9a2c93721e961",
+    "src/content/baselines.py": "621643ca6f217bff7c6788cb0b8a95e2e20f6f4fb79f8c3da63e99baac002aaa",
+    "src/content/demo.py": "91d9ff617f40cd5e848e92aa114d780906b9faa38c30ea8ed319461e62aa1645",
+    "src/content/errors.py": "f8d0248663ad0259c5f73b987f23f3122e9a1169bf8ca5024dbe938fc99b2c31",
+    "src/content/experimental.py": "63fa3d0d41f96c9acb2472636b3dafc20d9572c0b70876e9a6d8a2b9a5406fbf",
+    "src/content/features.py": "80c82c2854872f5eeb5e9b4a5e043f36bc0887c65d63490e9c4d765da8774494",
+    "src/content/genres.py": "ac2a3b1761c829a18e3638721b1b96467b60eef952a2164a7b420b682bb077cd",
+    "src/content/model.py": "d60665be034610ee3658ce6a51c2adc4dc03932ebbad55396346d349477c9f2d",
+    "src/content/profiles.py": "8f167414da681ed8cc48cb12998f520d629fc080ce1db8436ca8bc54a5007cd4",
+    "src/content/reliability.py": "d0db6eea5dfcab1719e8c386996715c4cbb610ada4efa102f015638c453f71a4",
+    "src/content/schemas.py": "b0c73280e42938b145d7d26c91275af178f7867f178082249aba4f692c1a06d8",
+    "src/content/scoring.py": "712faca80d88cbceee6691ed5d2a8bfa34a1343a110d6006cf75832b93ae0050",
+    "src/content/selection.py": "1275a90eef9c24594bca32e65af3560e72739bbff0494d9017cabea030ce7d46",
+    "src/content/text.py": "7edea3c16633588b17541f3b81933131baa1e7407372d4a450ffd80346b03bf0",
+    "src/data_processing/__init__.py": "d68018b552fb14a9acc6ec9c784a9c7f5976e565e3c91781488bc31bccf44459",
+    "src/data_processing/movielens.py": "2b27fdf1041003c220b9084e7ae0dfd1ccc3cfb41e09b4e963edf4fa4ac62f73",
+    "src/data_processing/text_metadata.py": "9543990c73fca0ff0d849eecf49b469272d1f6d6e1b63a8a6b9b99428114ffd5",
+    "src/data_processing/tmdb.py": "69799b82c2cf13ac0daa6b658dbfb876f931b736cb111b7ee26f06af32779a86",
+    "src/evaluate_catalog.py": "70bee9bfa7fef9296f930d3cdb89d41cb24bd4914b3f31393f08e79dff9619f6",
+    "src/evaluate_content.py": "1ff653533b91e60a4483fab4107b5a6712883d38155d4c807089a45f970ee949",
+    "src/evaluation/__init__.py": "1b8ed46b8f668bdbbc1893e8f5e4f1876fdfbdd9249bfb48b1e4052bec26028d",
+    "src/evaluation/catalog.py": "8b13d9c2c9e0e63bf42abac358f7d8503624f8927deae9f3d1406364b0b79ef3",
+    "src/evaluation/confirmation.py": "98cef07958d353abb3827351ee08cc9f28aa42d1743fde7aa90992d7cf699636"
+  },
+  "environment": {
+    "python": "3.13.7",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "blas_threads": 1
+  },
+  "preset": {
+    "name": "baseline+tfidf-n1-df1-d32-r5-w1",
+    "profile": {
+      "regularization_strength": 5.0,
+      "recency_half_life_days": 365.0,
+      "minimum_recency_weight": 0.5,
+      "reference_timestamp": null,
+      "cold_start_score": 2.5
+    },
+    "scoring": {
+      "genre_weight": 1.0,
+      "max_abs_genre_component": 1.0,
+      "confidence_prior_count": 5.0,
+      "cast_weight": 0.25,
+      "max_abs_cast_component": 0.25,
+      "director_weight": 0.5,
+      "runtime_weight": 0.25,
+      "release_era_weight": 0.25,
+      "language_weight": 0.25,
+      "max_abs_director_component": 0.5,
+      "max_abs_runtime_component": 0.25,
+      "max_abs_release_era_component": 0.25,
+      "max_abs_language_component": 0.25
+    },
+    "text": {
+      "source": "combined",
+      "representation": "tfidf",
+      "ngram_max": 1,
+      "min_df": 1,
+      "max_features": 10000,
+      "latent_dimensions": 32,
+      "regularization_strength": 5.0,
+      "weight": 1.0,
+      "max_adjustment": 0.5
+    }
+  },
+  "metrics": {
+    "structured_core": {
+      "recall_at_10": 0.030265471690022624,
+      "ndcg_at_10": 0.03965363345170242,
+      "recall_all_observed_positives_at_10": 0.026570479612954303,
+      "judged_fraction_at_10": 0.03756177924217463,
+      "recall_at_20": 0.04750596181865268,
+      "ndcg_at_20": 0.04453391127915515,
+      "recall_all_observed_positives_at_20": 0.041982649562932066,
+      "judged_fraction_at_20": 0.031630971993410216,
+      "users": 607,
+      "users_with_eligible_positives": 586,
+      "users_without_eligible_positives": 21,
+      "users_without_outcomes": 0,
+      "positive_availability_fraction": 0.852512865433045,
+      "positives_total": 9133,
+      "positives_eligible": 7786,
+      "candidate_count_median": 4949.0,
+      "recommended_catalog_coverage": {
+        "10": 0.20897211647288816,
+        "20": 0.3348081078300237
+      }
+    },
+    "selected": {
+      "recall_at_10": 0.03981567530669501,
+      "ndcg_at_10": 0.049208124793826205,
+      "recall_all_observed_positives_at_10": 0.03509657018885767,
+      "judged_fraction_at_10": 0.04233937397034597,
+      "recall_at_20": 0.05906693081104919,
+      "ndcg_at_20": 0.05429136496964976,
+      "recall_all_observed_positives_at_20": 0.05145856947245353,
+      "judged_fraction_at_20": 0.0357495881383855,
+      "users": 607,
+      "users_with_eligible_positives": 586,
+      "users_without_eligible_positives": 21,
+      "users_without_outcomes": 0,
+      "positive_availability_fraction": 0.852512865433045,
+      "positives_total": 9133,
+      "positives_eligible": 7786,
+      "candidate_count_median": 4949.0,
+      "recommended_catalog_coverage": {
+        "10": 0.23664986109682065,
+        "20": 0.36865932709126453
+      }
+    }
+  },
+  "selected_vs_core": {
+    "ndcg_at_10": {
+      "users": 586,
+      "mean_delta": 0.009554491342123788,
+      "ci95": [
+        0.004090626261708947,
+        0.015380628125155858
+      ],
+      "familywise_ci95": [
+        0.004090626261708947,
+        0.015380628125155858
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.07047618786222477,
+      "planning_mde_80pct_power": 0.008156379676746867,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 390,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    },
+    "recall_at_10": {
+      "users": 586,
+      "mean_delta": 0.009550203616672389,
+      "ci95": [
+        0.003296955246032142,
+        0.016666107392060373
+      ],
+      "familywise_ci95": [
+        0.003296955246032142,
+        0.016666107392060373
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.08330169881817762,
+      "planning_mde_80pct_power": 0.009640707079777398,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 545,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    },
+    "ndcg_at_20": {
+      "users": 586,
+      "mean_delta": 0.009757453690494607,
+      "ci95": [
+        0.004493713748371382,
+        0.015348248732546461
+      ],
+      "familywise_ci95": [
+        0.004493713748371382,
+        0.015348248732546461
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.06769805482317447,
+      "planning_mde_80pct_power": 0.007834859620876274,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 360,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    },
+    "recall_at_20": {
+      "users": 586,
+      "mean_delta": 0.01156096899239652,
+      "ci95": [
+        0.0037372696219805522,
+        0.019828222268855337
+      ],
+      "familywise_ci95": [
+        0.0037372696219805522,
+        0.019828222268855337
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.10069147356926998,
+      "planning_mde_80pct_power": 0.011653267771060767,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 796,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    }
+  },
+  "history_slices": {
+    "history_5_to_19": {
+      "structured_core": {
+        "recall_at_10": 0.014548022598870057,
+        "ndcg_at_10": 0.012475368397432154,
+        "recall_all_observed_positives_at_10": 0.014005602240896357,
+        "judged_fraction_at_10": 0.007633587786259542,
+        "recall_at_20": 0.023305084745762712,
+        "ndcg_at_20": 0.015549715402118917,
+        "recall_all_observed_positives_at_20": 0.022689075630252103,
+        "judged_fraction_at_20": 0.0057251908396946565,
+        "users": 131,
+        "users_with_eligible_positives": 118,
+        "users_without_eligible_positives": 13,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 0.9552631578947368,
+        "positives_total": 380,
+        "positives_eligible": 363,
+        "candidate_count_median": 5755.0
+      },
+      "selected": {
+        "recall_at_10": 0.03488700564971752,
+        "ndcg_at_10": 0.024375495438955314,
+        "recall_all_observed_positives_at_10": 0.03417366946778711,
+        "judged_fraction_at_10": 0.010687022900763359,
+        "recall_at_20": 0.04901129943502825,
+        "ndcg_at_20": 0.029457554928191423,
+        "recall_all_observed_positives_at_20": 0.04747899159663865,
+        "judged_fraction_at_20": 0.007633587786259542,
+        "users": 131,
+        "users_with_eligible_positives": 118,
+        "users_without_eligible_positives": 13,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 0.9552631578947368,
+        "positives_total": 380,
+        "positives_eligible": 363,
+        "candidate_count_median": 5755.0
+      }
+    },
+    "history_20_to_99": {
+      "structured_core": {
+        "recall_at_10": 0.039243671832046495,
+        "ndcg_at_10": 0.0427053877111899,
+        "recall_all_observed_positives_at_10": 0.03376693732582987,
+        "judged_fraction_at_10": 0.0359621451104101,
+        "recall_at_20": 0.06115587023284206,
+        "ndcg_at_20": 0.051031333924158186,
+        "recall_all_observed_positives_at_20": 0.05332431353733437,
+        "judged_fraction_at_20": 0.029495268138801267,
+        "users": 317,
+        "users_with_eligible_positives": 311,
+        "users_without_eligible_positives": 6,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 0.9180509413067552,
+        "positives_total": 2709,
+        "positives_eligible": 2487,
+        "candidate_count_median": 4413.0
+      },
+      "selected": {
+        "recall_at_10": 0.04854017373426732,
+        "ndcg_at_10": 0.05316458374305488,
+        "recall_all_observed_positives_at_10": 0.041568346392470173,
+        "judged_fraction_at_10": 0.04227129337539432,
+        "recall_at_20": 0.07146200007818213,
+        "ndcg_at_20": 0.061131749792639065,
+        "recall_all_observed_positives_at_20": 0.06041176658372418,
+        "judged_fraction_at_20": 0.033753943217665616,
+        "users": 317,
+        "users_with_eligible_positives": 311,
+        "users_without_eligible_positives": 6,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 0.9180509413067552,
+        "positives_total": 2709,
+        "positives_eligible": 2487,
+        "candidate_count_median": 4413.0
+      }
+    },
+    "history_100_plus": {
+      "structured_core": {
+        "recall_at_10": 0.02429374397401358,
+        "ndcg_at_10": 0.054035414991213775,
+        "recall_all_observed_positives_at_10": 0.021701261048826703,
+        "judged_fraction_at_10": 0.06540880503144653,
+        "recall_at_20": 0.03865616549883175,
+        "ndcg_at_20": 0.053447520647908836,
+        "recall_all_observed_positives_at_20": 0.03392311332106321,
+        "judged_fraction_at_20": 0.05723270440251571,
+        "users": 159,
+        "users_with_eligible_positives": 157,
+        "users_without_eligible_positives": 2,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 0.8166776968894772,
+        "positives_total": 6044,
+        "positives_eligible": 4936,
+        "candidate_count_median": 5406.0
+      },
+      "selected": {
+        "recall_at_10": 0.02623773905541068,
+        "ndcg_at_10": 0.060034822441371725,
+        "recall_all_observed_positives_at_10": 0.022852541258112893,
+        "judged_fraction_at_10": 0.06855345911949684,
+        "recall_at_20": 0.042071376418005464,
+        "ndcg_at_20": 0.0594062051285186,
+        "recall_all_observed_positives_at_20": 0.03656854319400124,
+        "judged_fraction_at_20": 0.06289308176100629,
+        "users": 159,
+        "users_with_eligible_positives": 157,
+        "users_without_eligible_positives": 2,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 0.8166776968894772,
+        "positives_total": 6044,
+        "positives_eligible": 4936,
+        "candidate_count_median": 5406.0
+      }
+    }
+  },
+  "unique_eligible_movies": 9719,
+  "elapsed_seconds": 265.81756458303425
+}

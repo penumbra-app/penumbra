@@ -1,0 +1,29 @@
+{
+  "started_at_utc": "2026-10-08T16:41:28.041502+00:00",
+  "status": "complete; both fixed-size cohorts evaluated, no tuning",
+  "plan_sha256": "1ab54a922b1f950295a00453ee011c965bfd69851782a4fd4c8a11271eaf88c4",
+  "comparison": "fixed selected TF-IDF content preset versus its structured core without text",
+  "primary_metric": "ndcg_at_10",
+  "minimum_worthwhile_absolute_gain": 0.01,
+  "development_users": 1000,
+  "reserved_users": 1000,
+  "tuning_during_this_run": false,
+  "automated_tests_passed": 166,
+  "zip_sha256": "e4a68655d7386b8f95f2f2424b2ff975dfdd15ffd59e0d864a14dca43e99d6ee",
+  "environment": {
+    "python": "3.13.7",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit_learn": "1.9.1",
+    "pandas": "3.0.6",
+    "threadpoolctl": "3.7.0"
+  },
+  "frozen_source_archive": ".cache/evaluation/ml32m/frozen-code.tar.gz",
+  "frozen_source_archive_sha256": "073efdc89cbf38029fee13dfda2c916f6f589bef003c8b4a3c16dd9065d6cae9",
+  "completed_at_utc": "2026-10-08T17:00:57.613799+00:00",
+  "report_sha256": {
+    "development": "0e516e7cfbccb8a4af44316edf036f29df237c611e672b96d5353dbc80a5a48a",
+    "reserved": "ee5734cbea83cca1b4a829a99bca161925c2f57b07583981f46f22105be40431"
+  }
+}
