@@ -1,3 +1,6 @@
+
+"""Evaluate Week 6 Hybrid ablations and the Week 7 user-balanced Hybrid."""
+
 import argparse
 import json
 from pathlib import Path
@@ -5,24 +8,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.collaborative.matrix_factorization import (
-    BiasedMatrixFactorization,
-)
+from src.collaborative.matrix_factorization import BiasedMatrixFactorization
 from src.content.profiles import ProfileConfig
 from src.content.scoring import ScoringConfig
-from src.evaluation.metrics import (
-    comparison_credit,
-    ndcg_at_k,
-)
-from src.evaluation.splits import (
-    build_user_evaluation_split,
-)
-from src.hybrid.content_adapter import (
-    build_content_model_from_frames,
-)
-from src.hybrid.genre_recommender import (
-    score_movies_by_genre,
-)
+from src.evaluation.metrics import comparison_credit, ndcg_at_k
+from src.evaluation.splits import build_user_evaluation_split
+from src.hybrid.content_adapter import build_content_model_from_frames
+from src.hybrid.genre_recommender import score_movies_by_genre
 from src.hybrid.ml_reranker import (
     AblationCandidate,
     calculate_movie_popularity,
@@ -32,21 +24,54 @@ from src.load_data import load_movielens
 from src.scripts.week6_ablations import EXPERIMENTS
 
 
-OLD_ML_MACRO = 0.63876
-OLD_ML_WEIGHTED = 0.68516
-OLD_ML_NDCG = 0.9051
+BENCHMARKS = {
+    "old_ml": {
+        "pairwise_macro": 0.63876,
+        "pairwise_weighted": 0.68516,
+        "ndcg_at_10": 0.9051,
+    },
+    "imdb_hybrid": {
+        "pairwise_macro": 0.63498,
+        "pairwise_weighted": 0.68267,
+        "ndcg_at_10": 0.9069,
+    },
+}
 
-IMDB_BASELINE_MACRO = 0.63498
-IMDB_BASELINE_WEIGHTED = 0.68267
-IMDB_BASELINE_NDCG = 0.9069
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
 
-def load_content_configuration(
-    report_path: Path,
-) -> tuple[ScoringConfig, ProfileConfig, str]:
-    report = json.loads(
-        report_path.read_text(encoding="utf-8")
+    parser.add_argument(
+        "--movies",
+        type=Path,
+        default=Path("data/movies-enriched.csv"),
     )
+    parser.add_argument(
+        "--content-report",
+        type=Path,
+        default=Path("docs/week6-content-repro.json"),
+    )
+    parser.add_argument(
+        "--models-dir",
+        type=Path,
+        default=Path("src/models/week6_ablations"),
+    )
+    parser.add_argument(
+        "--balanced-model",
+        type=Path,
+        default=None,
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("docs/week6-ablation-results.json"),
+    )
+
+    return parser.parse_args()
+
+
+def load_content_configuration(report_path):
+    report = json.loads(report_path.read_text(encoding="utf-8"))
 
     return (
         ScoringConfig(**report["selected_config"]),
@@ -55,110 +80,46 @@ def load_content_configuration(
     )
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def prepare_evaluation_data(ratings):
+    """
+    Construct the same chronological 60/20/20 splits used in Week 6.
 
-    parser.add_argument(
-        "--movies",
-        type=Path,
-        default=Path("data/movies-enriched.csv"),
-    )
+    Profile ratings provide upstream model evidence.
+    Final test ratings are reserved for evaluation.
+    """
+    profiles = []
+    test_users = {}
 
-    parser.add_argument(
-        "--content-report",
-        type=Path,
-        default=Path("docs/week6-content-repro.json"),
-    )
-
-    parser.add_argument(
-        "--models-dir",
-        type=Path,
-        default=Path("src/models/week6_ablations"),
-    )
-
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path("docs/week6-ablation-results.json"),
-    )
-
-    args = parser.parse_args()
-
-    ratings, movies = load_movielens(
-        "data",
-        movies_path=args.movies,
-    )
-
-    (
-        scoring_config,
-        profile_config,
-        selected_variant,
-    ) = load_content_configuration(
-        args.content_report
-    )
-
-    print("Week 6 Ablation Evaluation")
-    print("=" * 84)
-
-    print(f"Ratings:        {len(ratings):,}")
-    print(f"Users:          {ratings['userId'].nunique():,}")
-    print(f"Movies:         {len(movies):,}")
-    print(f"Content config: {selected_variant}")
-
-    # ---------------------------------------------------------
-    # Build the exact shared 60 / 20 / 20 split.
-    # Only the first 60% is used to construct upstream
-    # Content/MF/personal/quality/popularity evidence.
-    # ---------------------------------------------------------
-
-    profile_parts: list[pd.DataFrame] = []
-
-    user_test_data: dict[
-        int,
-        tuple[pd.DataFrame, pd.DataFrame],
-    ] = {}
-
-    for raw_user_id in ratings["userId"].unique():
-        user_id = int(raw_user_id)
-
-        user_ratings = ratings.loc[
-            ratings["userId"] == user_id
-        ].copy()
-
+    for user_id, user_ratings in ratings.groupby(
+        "userId", sort=False
+    ):
         if len(user_ratings) < 10:
             continue
 
-        profile, _, test = (
-            build_user_evaluation_split(
-                user_ratings
-            )
+        profile, _, test = build_user_evaluation_split(
+            user_ratings.copy()
         )
 
-        profile_parts.append(profile)
+        profiles.append(profile)
 
         if len(test) >= 2:
-            user_test_data[user_id] = (
-                profile,
-                test,
-            )
+            test_users[int(user_id)] = (profile, test)
 
-    if not profile_parts:
-        raise ValueError(
-            "No profile ratings were generated"
-        )
+    if not profiles:
+        raise ValueError("No eligible users found")
 
-    global_profile_ratings = pd.concat(
-        profile_parts,
-        ignore_index=True,
+    population_ratings = pd.concat(
+        profiles, ignore_index=True
     )
 
-    # ---------------------------------------------------------
-    # Must match Week 6 ablation training MF exactly.
-    # ---------------------------------------------------------
+    return population_ratings, test_users
 
-    print("\nTraining evaluation MF...")
 
-    collaborative_model = BiasedMatrixFactorization(
+def train_evaluation_mf(population_ratings):
+    """
+    Reproduce the Week 6 evaluation MF configuration.
+    """
+    model = BiasedMatrixFactorization(
         n_factors=20,
         learning_rate=0.005,
         regularization=0.02,
@@ -168,367 +129,348 @@ def main() -> None:
         shrink_latent=True,
     )
 
-    collaborative_model.fit(
-        global_profile_ratings
-    )
+    model.fit(population_ratings)
 
-    # ---------------------------------------------------------
-    # Load all trained ablation rankers.
-    # ---------------------------------------------------------
+    return model
+
+
+def load_experiments(args):
+    """
+    Load the original Week 6 experiments and optionally register
+    the Week 7 balanced model.
+
+    The balanced model uses exactly the same five features
+    as the Week 6 plus_personal experiment.
+    """
+    configurations = {
+        name: list(features)
+        for name, features in EXPERIMENTS.items()
+    }
+
+    model_paths = {
+        name: args.models_dir / f"{name}.joblib"
+        for name in configurations
+    }
+
+    if args.balanced_model is not None:
+        name = "week7_user_balanced"
+
+        configurations[name] = list(
+            EXPERIMENTS["plus_personal"]
+        )
+        model_paths[name] = args.balanced_model
 
     rankers = {}
 
-    for experiment_name, features in EXPERIMENTS.items():
-        model_path = (
-            args.models_dir
-            / f"{experiment_name}.joblib"
-        )
+    for name, features in configurations.items():
+        path = model_paths[name]
 
-        ranker = load_ranker(
-            path=str(model_path)
-        )
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"Missing model for {name}: {path}"
+            )
+
+        ranker = load_ranker(path=str(path))
 
         expected = len(features)
-        actual = int(
-            ranker.scaler.n_features_in_
-        )
+        actual = int(ranker.scaler.n_features_in_)
 
-        if actual != expected:
+        if expected != actual:
             raise ValueError(
-                f"{experiment_name}: model expects "
-                f"{actual} features but experiment "
-                f"defines {expected}"
+                f"{name}: expected {expected} features, "
+                f"but saved model uses {actual}"
             )
 
-        rankers[experiment_name] = ranker
+        rankers[name] = ranker
 
-    user_accuracies = {
-        name: []
-        for name in EXPERIMENTS
+    return configurations, rankers
+
+
+def score_user_movies(
+    user_id,
+    profile,
+    test,
+    movies,
+    population_ratings,
+    collaborative_model,
+    scoring_config,
+    profile_config,
+    configurations,
+    rankers,
+):
+    """
+    Build the five underlying signals for each held-out movie,
+    then score that movie using every registered experiment.
+    """
+    movie_ids = test["movieId"].astype(int).tolist()
+
+    mf_scores = (
+        collaborative_model.predict(
+            user_ids=[user_id] * len(movie_ids),
+            movie_ids=movie_ids,
+        )
+        .set_index("movie_id")["predicted_score"]
+        .to_dict()
+    )
+
+    content_model = build_content_model_from_frames(
+        profile_ratings=profile,
+        movies=movies,
+        scoring_config=scoring_config,
+        profile_config=profile_config,
+    )
+
+    reference_ratings = population_ratings.loc[
+        population_ratings["userId"] != user_id
+    ].copy()
+
+    popularity = calculate_movie_popularity(
+        reference_ratings
+    )
+
+    genre_scores = score_movies_by_genre(
+        user_id=user_id,
+        user_history=profile,
+        reference_ratings=reference_ratings,
+        movies=movies,
+        movie_ids=movie_ids,
+    )
+
+    personal = {
+        candidate.movie_id: candidate.personal_score
+        for candidate in genre_scores
     }
 
-    user_ndcgs = {
-        name: []
-        for name in EXPERIMENTS
+    quality = {
+        candidate.movie_id: candidate.quality_score
+        for candidate in genre_scores
     }
 
-    weighted_correct = {
-        name: 0.0
-        for name in EXPERIMENTS
-    }
+    actual_ratings = {}
 
-    total_pairs = 0
-    users_evaluated = 0
-
-    print("Evaluating final 20%...\n")
-
-    # ---------------------------------------------------------
-    # Evaluate all experiments over identical user/movie sets.
-    # ---------------------------------------------------------
-
-    for user_id, (
-        profile,
-        test,
-    ) in user_test_data.items():
-
-        test_movie_ids = (
-            test["movieId"]
-            .astype(int)
-            .tolist()
+    for movie_id, rating in zip(
+        test["movieId"], test["rating"]
+    ):
+        actual_ratings.setdefault(
+            int(movie_id), float(rating)
         )
 
-        mf_predictions = (
-            collaborative_model.predict(
-                user_ids=(
-                    [user_id]
-                    * len(test_movie_ids)
-                ),
-                movie_ids=test_movie_ids,
+    scored = {}
+
+    for movie_id in movie_ids:
+        if movie_id in scored:
+            continue
+
+        if not all(
+            movie_id in source
+            for source in (
+                mf_scores,
+                popularity,
+                personal,
+                quality,
+                actual_ratings,
             )
-            .set_index("movie_id")[
-                "predicted_score"
-            ]
-            .to_dict()
-        )
+        ):
+            continue
 
-        content_model = (
-            build_content_model_from_frames(
-                profile_ratings=profile,
-                movies=movies,
-                scoring_config=scoring_config,
-                profile_config=profile_config,
-            )
-        )
-
-        reference_ratings = (
-            global_profile_ratings.loc[
-                global_profile_ratings[
-                    "userId"
-                ] != user_id
-            ].copy()
-        )
-
-        popularity = (
-            calculate_movie_popularity(
-                reference_ratings
-            )
-        )
-
-        scored_movies = score_movies_by_genre(
+        content_prediction = content_model.predict_one(
             user_id=user_id,
-            user_history=profile,
-            reference_ratings=reference_ratings,
-            movies=movies,
-            movie_ids=test_movie_ids,
+            movie_id=movie_id,
         )
 
-        personal_by_movie = {
-            movie.movie_id:
-            movie.personal_score
-            for movie in scored_movies
-        }
-
-        quality_by_movie = {
-            movie.movie_id:
-            movie.quality_score
-            for movie in scored_movies
-        }
-
-        movie_data = {}
-
-        for movie_id in test_movie_ids:
-            if movie_id not in mf_predictions:
-                continue
-
-            if movie_id not in popularity:
-                continue
-
-            if movie_id not in personal_by_movie:
-                continue
-
-            if movie_id not in quality_by_movie:
-                continue
-
-            actual_rows = test.loc[
-                test["movieId"] == movie_id,
-                "rating",
-            ]
-
-            if actual_rows.empty:
-                continue
-
-            content_prediction = (
-                content_model.predict_one(
-                    user_id=user_id,
-                    movie_id=movie_id,
-                )
-            )
-
-            candidate = AblationCandidate(
-                movie_id=movie_id,
-                collaborative_score=float(
-                    mf_predictions[movie_id]
-                ),
-                personal_score=float(
-                    personal_by_movie[movie_id]
-                ),
-                content_score=float(
-                    content_prediction.predicted_score
-                ),
-                quality_score=float(
-                    quality_by_movie[movie_id]
-                ),
-                popularity=float(
-                    popularity[movie_id]
-                ),
-            )
-
-            scores = {}
-
-            for (
-                experiment_name,
-                features,
-            ) in EXPERIMENTS.items():
-
-                ranker = rankers[
-                    experiment_name
-                ]
-
-                raw = (
-                    candidate
-                    .as_array(features)
-                    .reshape(1, -1)
-                )
-
-                scaled = (
-                    ranker.scaler.transform(raw)
-                )
-
-                score = float(
-                    ranker.model.decision_function(
-                        scaled
-                    )[0]
-                )
-
-                scores[
-                    experiment_name
-                ] = score
-
-            movie_data[movie_id] = {
-                "actual": float(
-                    actual_rows.iloc[0]
-                ),
-                "scores": scores,
-            }
-
-        movie_ids = list(
-            movie_data.keys()
+        candidate = AblationCandidate(
+            movie_id=movie_id,
+            collaborative_score=float(mf_scores[movie_id]),
+            personal_score=float(personal[movie_id]),
+            content_score=float(
+                content_prediction.predicted_score
+            ),
+            quality_score=float(quality[movie_id]),
+            popularity=float(popularity[movie_id]),
         )
 
-        if len(movie_ids) < 2:
-            continue
+        predictions = {}
 
-        correct = {
-            name: 0.0
-            for name in EXPERIMENTS
-        }
+        for name, features in configurations.items():
+            ranker = rankers[name]
 
-        user_pairs = 0
+            vector = candidate.as_array(features).reshape(
+                1, -1
+            )
 
-        for i in range(len(movie_ids)):
-            for j in range(
-                i + 1,
-                len(movie_ids),
-            ):
-                first = movie_data[
-                    movie_ids[i]
-                ]
+            standardized = ranker.scaler.transform(vector)
 
-                second = movie_data[
-                    movie_ids[j]
-                ]
+            predictions[name] = float(
+                ranker.model.decision_function(
+                    standardized
+                )[0]
+            )
 
-                if (
-                    first["actual"]
-                    == second["actual"]
-                ):
-                    continue
+        scored[movie_id] = (
+            actual_ratings[movie_id],
+            predictions,
+        )
 
-                for name in EXPERIMENTS:
-                    correct[name] += (
-                        comparison_credit(
-                            first_score=(
-                                first["scores"][
-                                    name
-                                ]
-                            ),
-                            second_score=(
-                                second["scores"][
-                                    name
-                                ]
-                            ),
-                            first_rating=(
-                                first["actual"]
-                            ),
-                            second_rating=(
-                                second["actual"]
-                            ),
-                        )
-                    )
+    return scored
 
-                user_pairs += 1
 
-        if user_pairs == 0:
-            continue
+def evaluate_user(scored, experiment_names):
+    """
+    Calculate accuracy for each model using the same
+    valid movie pairs, excluding equal-rating pairs.
+    """
+    movie_records = list(scored.values())
 
-        users_evaluated += 1
-        total_pairs += user_pairs
+    correct = {
+        name: 0.0 for name in experiment_names
+    }
 
-        actual_relevance = [
-            movie_data[movie_id]["actual"]
-            for movie_id in movie_ids
+    valid_pairs = 0
+
+    for i, first in enumerate(movie_records):
+        first_rating, first_scores = first
+
+        for second_rating, second_scores in movie_records[i + 1:]:
+            if first_rating == second_rating:
+                continue
+
+            valid_pairs += 1
+
+            for name in experiment_names:
+                correct[name] += comparison_credit(
+                    first_score=first_scores[name],
+                    second_score=second_scores[name],
+                    first_rating=first_rating,
+                    second_rating=second_rating,
+                )
+
+    if valid_pairs == 0:
+        return None
+
+    actual_relevance = [
+        record[0] for record in movie_records
+    ]
+
+    metrics = {}
+
+    for name in experiment_names:
+        predicted_scores = [
+            record[1][name] for record in movie_records
         ]
 
-        for name in EXPERIMENTS:
-            accuracy = (
-                correct[name]
-                / user_pairs
-            )
-
-            predicted_scores = [
-                movie_data[movie_id][
-                    "scores"
-                ][name]
-                for movie_id in movie_ids
-            ]
-
-            ndcg = ndcg_at_k(
+        metrics[name] = {
+            "accuracy": correct[name] / valid_pairs,
+            "correct": correct[name],
+            "ndcg": ndcg_at_k(
                 actual_relevance=actual_relevance,
                 predicted_scores=predicted_scores,
                 k=10,
+            ),
+        }
+
+    return valid_pairs, metrics
+
+
+def evaluate_all_users(
+    test_users,
+    movies,
+    population_ratings,
+    collaborative_model,
+    scoring_config,
+    profile_config,
+    configurations,
+    rankers,
+):
+    """
+    Accumulate macro, pair-weighted, and NDCG@10 results.
+    Every model is evaluated over the same set of users and pairs.
+    """
+    names = list(configurations)
+
+    accumulators = {
+        name: {
+            "user_accuracy": [],
+            "user_ndcg": [],
+            "correct_pairs": 0.0,
+        }
+        for name in names
+    }
+
+    total_pairs = 0
+    evaluated_users = 0
+
+    for user_id, (profile, test) in test_users.items():
+        scored = score_user_movies(
+            user_id=user_id,
+            profile=profile,
+            test=test,
+            movies=movies,
+            population_ratings=population_ratings,
+            collaborative_model=collaborative_model,
+            scoring_config=scoring_config,
+            profile_config=profile_config,
+            configurations=configurations,
+            rankers=rankers,
+        )
+
+        evaluation = evaluate_user(scored, names)
+
+        if evaluation is None:
+            continue
+
+        pair_count, user_metrics = evaluation
+
+        evaluated_users += 1
+        total_pairs += pair_count
+
+        for name in names:
+            metrics = user_metrics[name]
+            acc = accumulators[name]
+
+            acc["user_accuracy"].append(
+                metrics["accuracy"]
             )
-
-            user_accuracies[
-                name
-            ].append(accuracy)
-
-            user_ndcgs[
-                name
-            ].append(ndcg)
-
-            weighted_correct[
-                name
-            ] += correct[name]
+            acc["user_ndcg"].append(metrics["ndcg"])
+            acc["correct_pairs"] += metrics["correct"]
 
     if total_pairs == 0:
-        raise ValueError(
-            "No valid test pairs were generated"
-        )
+        raise ValueError("No valid test pairs were generated")
 
     results = []
 
-    for name, features in EXPERIMENTS.items():
-        macro = float(
-            np.mean(
-                user_accuracies[name]
-            )
-        )
-
-        weighted = float(
-            weighted_correct[name]
-            / total_pairs
-        )
-
-        ndcg = float(
-            np.mean(
-                user_ndcgs[name]
-            )
-        )
+    for name, features in configurations.items():
+        acc = accumulators[name]
 
         results.append({
             "name": name,
             "features": features,
-            "pairwise_macro": macro,
-            "pairwise_weighted": weighted,
-            "ndcg_at_10": ndcg,
+            "pairwise_macro": float(
+                np.mean(acc["user_accuracy"])
+            ),
+            "pairwise_weighted": float(
+                acc["correct_pairs"] / total_pairs
+            ),
+            "ndcg_at_10": float(
+                np.mean(acc["user_ndcg"])
+            ),
         })
 
     results.sort(
-        key=lambda item: (
-            item["pairwise_macro"],
-            item["pairwise_weighted"],
-            item["ndcg_at_10"],
+        key=lambda result: (
+            result["pairwise_macro"],
+            result["pairwise_weighted"],
+            result["ndcg_at_10"],
         ),
         reverse=True,
     )
 
+    return results, evaluated_users, total_pairs
+
+
+def display_results(results, user_count, pair_count):
     print("=" * 84)
-    print(
-        f"Users evaluated: {users_evaluated:,}"
-    )
-    print(
-        f"Test pairs:      {total_pairs:,}"
-    )
+    print(f"Users evaluated: {user_count:,}")
+    print(f"Test pairs:      {pair_count:,}")
 
     print("\nResults")
     print("=" * 84)
@@ -539,7 +481,6 @@ def main() -> None:
         f"{'Weighted':>14}"
         f"{'NDCG@10':>14}"
     )
-
     print("-" * 84)
 
     for result in results:
@@ -552,122 +493,116 @@ def main() -> None:
 
     print("-" * 84)
 
-    print(
-        f"{'Old ML benchmark':<28}"
-        f"{OLD_ML_MACRO:>13.3%}"
-        f"{OLD_ML_WEIGHTED:>13.3%}"
-        f"{OLD_ML_NDCG:>14.4f}"
-    )
+    for name, label in (
+        ("old_ml", "Old ML benchmark"),
+        ("imdb_hybrid", "IMDb Hybrid baseline"),
+    ):
+        benchmark = BENCHMARKS[name]
 
-    print(
-        f"{'IMDb Hybrid baseline':<28}"
-        f"{IMDB_BASELINE_MACRO:>13.3%}"
-        f"{IMDB_BASELINE_WEIGHTED:>13.3%}"
-        f"{IMDB_BASELINE_NDCG:>14.4f}"
-    )
+        print(
+            f"{label:<28}"
+            f"{benchmark['pairwise_macro']:>13.3%}"
+            f"{benchmark['pairwise_weighted']:>13.3%}"
+            f"{benchmark['ndcg_at_10']:>14.4f}"
+        )
 
     best = results[0]
+    old = BENCHMARKS["old_ml"]
 
-    print("\nBest Week 6 Ablation")
+    print("\nBest Evaluated Ablation")
     print("=" * 84)
-
     print(f"Model:    {best['name']}")
-    print(
-        f"Features: "
-        f"{', '.join(best['features'])}"
-    )
-    print(
-        f"Macro:    "
-        f"{best['pairwise_macro']:.3%}"
-    )
-    print(
-        f"Weighted: "
-        f"{best['pairwise_weighted']:.3%}"
-    )
-    print(
-        f"NDCG@10:  "
-        f"{best['ndcg_at_10']:.4f}"
-    )
+    print(f"Features: {', '.join(best['features'])}")
+    print(f"Macro:    {best['pairwise_macro']:.3%}")
+    print(f"Weighted: {best['pairwise_weighted']:.3%}")
+    print(f"NDCG@10:  {best['ndcg_at_10']:.4f}")
 
     print("\nVs Old ML:")
     print(
-        "Macro:    "
-        f"{(
-            best['pairwise_macro']
-            - OLD_ML_MACRO
-        ) * 100:+.3f} pp"
+        f"Macro:    "
+        f"{(best['pairwise_macro'] - old['pairwise_macro']) * 100:+.3f} pp"
     )
     print(
-        "Weighted: "
-        f"{(
-            best['pairwise_weighted']
-            - OLD_ML_WEIGHTED
-        ) * 100:+.3f} pp"
+        f"Weighted: "
+        f"{(best['pairwise_weighted'] - old['pairwise_weighted']) * 100:+.3f} pp"
     )
     print(
-        "NDCG@10:  "
-        f"{(
-            best['ndcg_at_10']
-            - OLD_ML_NDCG
-        ):+.4f}"
+        f"NDCG@10:  "
+        f"{best['ndcg_at_10'] - old['ndcg_at_10']:+.4f}"
     )
+
+
+def main():
+    args = parse_arguments()
+
+    ratings, movies = load_movielens(
+        "data", movies_path=args.movies
+    )
+
+    (
+        scoring_config,
+        profile_config,
+        content_variant,
+    ) = load_content_configuration(args.content_report)
+
+    print("Week 6 / Week 7 Hybrid Evaluation")
+    print("=" * 84)
+    print(f"Ratings:        {len(ratings):,}")
+    print(f"Users:          {ratings['userId'].nunique():,}")
+    print(f"Movies:         {len(movies):,}")
+    print(f"Content config: {content_variant}")
+
+    population_ratings, test_users = prepare_evaluation_data(
+        ratings
+    )
+
+    configurations, rankers = load_experiments(args)
+
+    print("\nModels loaded:")
+    for name in configurations:
+        print(f"  - {name}")
+
+    print("\nTraining evaluation MF...")
+    collaborative_model = train_evaluation_mf(
+        population_ratings
+    )
+
+    print("\nEvaluating final 20%...\n")
+
+    results, user_count, pair_count = evaluate_all_users(
+        test_users=test_users,
+        movies=movies,
+        population_ratings=population_ratings,
+        collaborative_model=collaborative_model,
+        scoring_config=scoring_config,
+        profile_config=profile_config,
+        configurations=configurations,
+        rankers=rankers,
+    )
+
+    display_results(results, user_count, pair_count)
 
     output = {
         "movies": str(args.movies),
-        "content_report": str(
-            args.content_report
-        ),
-        "content_variant": (
-            selected_variant
-        ),
-        "users_evaluated": (
-            users_evaluated
-        ),
-        "test_pairs": total_pairs,
-        "benchmarks": {
-            "old_ml": {
-                "pairwise_macro": (
-                    OLD_ML_MACRO
-                ),
-                "pairwise_weighted": (
-                    OLD_ML_WEIGHTED
-                ),
-                "ndcg_at_10": (
-                    OLD_ML_NDCG
-                ),
-            },
-            "imdb_hybrid": {
-                "pairwise_macro": (
-                    IMDB_BASELINE_MACRO
-                ),
-                "pairwise_weighted": (
-                    IMDB_BASELINE_WEIGHTED
-                ),
-                "ndcg_at_10": (
-                    IMDB_BASELINE_NDCG
-                ),
-            },
-        },
+        "content_report": str(args.content_report),
+        "content_variant": content_variant,
+        "users_evaluated": user_count,
+        "test_pairs": pair_count,
+        "benchmarks": BENCHMARKS,
         "results": results,
-        "best_by_macro": best["name"],
+        "best_by_macro": results[0]["name"],
     }
 
     args.output.parent.mkdir(
-        parents=True,
-        exist_ok=True,
+        parents=True, exist_ok=True
     )
 
     args.output.write_text(
-        json.dumps(
-            output,
-            indent=2,
-        ),
+        json.dumps(output, indent=2),
         encoding="utf-8",
     )
 
-    print(
-        f"\nSaved results: {args.output}"
-    )
+    print(f"\nSaved results: {args.output}")
 
 
 if __name__ == "__main__":

@@ -193,16 +193,63 @@ def build_pairwise_examples(
         np.array(labels, dtype=int),
     )
 
+def equal_user_pair_weights(pair_counts: list[int]) -> np.ndarray:
+    """
+    Assign equal total training weight to every contributing user.
+    """
+    if not pair_counts or any(count <= 0 for count in pair_counts):
+        raise ValueError("Every user must contribute at least one pair")
+
+    total_pairs = sum(pair_counts)
+    user_count = len(pair_counts)
+
+    weight_blocks = []
+
+    for count in pair_counts:
+        weight_per_pair = total_pairs / (user_count * count)
+
+        weight_blocks.append(
+            np.full(count, weight_per_pair, dtype=float)
+        )
+
+    weights = np.concatenate(weight_blocks)
+
+    assert len(weights) == total_pairs
+    assert np.isclose(weights.sum(), total_pairs)
+
+    return weights
+
 def train_ranker(
     X: np.ndarray,
     y: np.ndarray,
+    sample_weight: np.ndarray | None = None,
 ) -> TrainedRanker:
+    if sample_weight is not None:
+        sample_weight = np.asarray(sample_weight, dtype=float)
+
+        if (
+            sample_weight.shape != (len(y),)
+            or not np.isfinite(sample_weight).all()
+            or np.any(sample_weight <= 0)
+        ):
+            raise ValueError(
+                "sample_weight must contain one finite positive value per row"
+            )
+
     scaler = StandardScaler()
 
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(
+        X,
+        sample_weight=sample_weight,
+    )
 
     model = LogisticRegression(random_state=42)
-    model.fit(X_scaled, y)
+
+    model.fit(
+        X_scaled,
+        y,
+        sample_weight=sample_weight,
+    )
 
     return TrainedRanker(
         scaler=scaler,
@@ -761,7 +808,12 @@ def build_ablation_training_dataset(
     features: list[str],
     scoring_config: ScoringConfig | None = None,
     profile_config: ProfileConfig | None = None,
-) -> tuple[np.ndarray, np.ndarray, int]:
+    *,
+    return_user_weights: bool = False,
+) -> (
+    tuple[np.ndarray, np.ndarray, int]
+    | tuple[np.ndarray, np.ndarray, int, np.ndarray]
+):
     user_splits: dict[
         int,
         tuple[pd.DataFrame, pd.DataFrame],
@@ -807,6 +859,7 @@ def build_ablation_training_dataset(
     all_features = []
     all_labels = []
     users_used = 0
+    pair_counts: list[int] = []
 
     for user_id, (profile, train) in user_splits.items():
         reference_ratings = global_profile_ratings.loc[
@@ -841,6 +894,8 @@ def build_ablation_training_dataset(
 
         all_features.append(X_user)
         all_labels.append(y_user)
+
+        pair_counts.append(len(y_user))
         users_used += 1
 
     if not all_features:
@@ -850,6 +905,11 @@ def build_ablation_training_dataset(
 
     X = np.vstack(all_features)
     y = np.concatenate(all_labels)
+
+    if return_user_weights:
+        weights = equal_user_pair_weights(pair_counts)
+
+        return X, y, users_used, weights
 
     return X, y, users_used
 
