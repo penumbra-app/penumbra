@@ -1,4 +1,4 @@
-"""Held-out content evaluation using the team's existing 60/20/20 split."""
+﻿"""Held-out content evaluation using the team's existing 60/20/20 split."""
 from __future__ import annotations
 
 import hashlib
@@ -99,7 +99,7 @@ def evaluate_content(ratings: pd.DataFrame, movie_records: pd.DataFrame,
         raise ValueError("not enough data for nonempty validation and test partitions")
     model = ContentModel(training, movies_by_id.values(), profile_config=active_profile)
     coverage = {kind: sum(bool(m.genres) if kind == "genre" else bool(
-        feature_values(m, kind, active_profile.max_cast_members)) for m in movies)
+        feature_values(m, kind)) for m in movies)
         for kind in KINDS}
     # A feature with no training evidence cannot be promoted by an identical score.
     learned_kinds = set()

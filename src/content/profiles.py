@@ -127,6 +127,5 @@ def build_profile(
         config=active_config,
         feature_preferences=aggregate_feature_preferences(
             baseline, movies_by_id, weights, active_config.regularization_strength,
-            active_config.max_cast_members,
         ),
     )

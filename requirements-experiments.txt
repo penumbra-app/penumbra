@@ -1,0 +1,6 @@
+# Exact numerical environment used for the Week 6 benchmark (Python 3.13).
+numpy==2.5.3
+scipy==1.18.1
+scikit-learn==1.9.1
+pandas==3.0.6
+threadpoolctl==3.7.0

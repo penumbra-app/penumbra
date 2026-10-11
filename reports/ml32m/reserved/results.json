@@ -1,0 +1,345 @@
+{
+  "protocol": {
+    "primary_metric": "ndcg_at_10",
+    "ks": [
+      10,
+      20
+    ],
+    "positive_rating_threshold": 4.0,
+    "selection": "fixed preset; no tuning on this run",
+    "relevance": "known positives only; unobserved items are unjudged, not confirmed negatives",
+    "denominator": "eligible held-out positives; all-observed-positive recall also reported",
+    "ties": "score descending, movie ID ascending for every model",
+    "secondary_metrics": "exploratory; primary inference is NDCG@10 only",
+    "mode": "ml32m_reserved_offline",
+    "plan_id": "abccf50614d8842f845029c7ad190ab09ad3f13983ba28f6f7b2c7d2cdcc9f7d",
+    "split": "first approximately 80% history, final 20% outcomes; timestamp groups intact",
+    "catalog_availability": "earliest interaction in the entire 32M source, used only as an availability proxy",
+    "catalog_scope": "fixed intersection with existing metadata via unambiguous TMDB/IMDb identities",
+    "metadata_temporality": "retrospective TMDB snapshot; MovieLens community tags intentionally omitted",
+    "cohort_eligibility": "first recorded source activity after legacy end; no matching old movie/rating/time event; >=20 restricted-catalog ratings; >=5 chronological history and >=2 outcome ratings",
+    "limitations": "reserved offline cohort, not prospective or causal evidence; event screening and newer recorded activity do not prove cross-release person identity disjointness",
+    "smoke_limit": null,
+    "test_status": "reserved offline evaluation"
+  },
+  "input_sha256": {
+    "manifest": "a3d9434e47f1bd1214c06b035700eb534f717cca848c158dc166b970cfc19557",
+    "preset": "7b6bbfaad010c70d51cff5b33de10e5ca87311c17169f3307c40943837233ead",
+    "metadata/availability.csv": "b24ecde94519317bfb665a23a5e8e902abf3ef07d6f02f5a095e116c40db505b",
+    "metadata/movies.csv": "de79ed2042404f7fe7ea68a536f3544f62c1f79105d22720ceb7e7287ac40010",
+    "reserved/ratings.csv": "a6d0b5a98565ee768c262a2e97092fade7a8f971c0360531baa6aed82f4c0391"
+  },
+  "source_sha256": {
+    "src/content/__init__.py": "c984b599a814da9b6d7d7d21c116b506a30f3faa14e52fe42bd9a2c93721e961",
+    "src/content/baselines.py": "621643ca6f217bff7c6788cb0b8a95e2e20f6f4fb79f8c3da63e99baac002aaa",
+    "src/content/demo.py": "91d9ff617f40cd5e848e92aa114d780906b9faa38c30ea8ed319461e62aa1645",
+    "src/content/errors.py": "f8d0248663ad0259c5f73b987f23f3122e9a1169bf8ca5024dbe938fc99b2c31",
+    "src/content/experimental.py": "63fa3d0d41f96c9acb2472636b3dafc20d9572c0b70876e9a6d8a2b9a5406fbf",
+    "src/content/features.py": "80c82c2854872f5eeb5e9b4a5e043f36bc0887c65d63490e9c4d765da8774494",
+    "src/content/genres.py": "ac2a3b1761c829a18e3638721b1b96467b60eef952a2164a7b420b682bb077cd",
+    "src/content/model.py": "d60665be034610ee3658ce6a51c2adc4dc03932ebbad55396346d349477c9f2d",
+    "src/content/profiles.py": "8f167414da681ed8cc48cb12998f520d629fc080ce1db8436ca8bc54a5007cd4",
+    "src/content/reliability.py": "d0db6eea5dfcab1719e8c386996715c4cbb610ada4efa102f015638c453f71a4",
+    "src/content/schemas.py": "b0c73280e42938b145d7d26c91275af178f7867f178082249aba4f692c1a06d8",
+    "src/content/scoring.py": "712faca80d88cbceee6691ed5d2a8bfa34a1343a110d6006cf75832b93ae0050",
+    "src/content/selection.py": "1275a90eef9c24594bca32e65af3560e72739bbff0494d9017cabea030ce7d46",
+    "src/content/text.py": "7edea3c16633588b17541f3b81933131baa1e7407372d4a450ffd80346b03bf0",
+    "src/data_processing/__init__.py": "d68018b552fb14a9acc6ec9c784a9c7f5976e565e3c91781488bc31bccf44459",
+    "src/data_processing/movielens.py": "2b27fdf1041003c220b9084e7ae0dfd1ccc3cfb41e09b4e963edf4fa4ac62f73",
+    "src/data_processing/text_metadata.py": "9543990c73fca0ff0d849eecf49b469272d1f6d6e1b63a8a6b9b99428114ffd5",
+    "src/data_processing/tmdb.py": "69799b82c2cf13ac0daa6b658dbfb876f931b736cb111b7ee26f06af32779a86",
+    "src/evaluate_catalog.py": "70bee9bfa7fef9296f930d3cdb89d41cb24bd4914b3f31393f08e79dff9619f6",
+    "src/evaluate_content.py": "1ff653533b91e60a4483fab4107b5a6712883d38155d4c807089a45f970ee949",
+    "src/evaluation/__init__.py": "1b8ed46b8f668bdbbc1893e8f5e4f1876fdfbdd9249bfb48b1e4052bec26028d",
+    "src/evaluation/catalog.py": "8b13d9c2c9e0e63bf42abac358f7d8503624f8927deae9f3d1406364b0b79ef3",
+    "src/evaluation/confirmation.py": "98cef07958d353abb3827351ee08cc9f28aa42d1743fde7aa90992d7cf699636"
+  },
+  "environment": {
+    "python": "3.13.7",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "blas_threads": 1
+  },
+  "preset": {
+    "name": "baseline+tfidf-n1-df1-d32-r5-w1",
+    "profile": {
+      "regularization_strength": 5.0,
+      "recency_half_life_days": 365.0,
+      "minimum_recency_weight": 0.5,
+      "reference_timestamp": null,
+      "cold_start_score": 2.5
+    },
+    "scoring": {
+      "genre_weight": 1.0,
+      "max_abs_genre_component": 1.0,
+      "confidence_prior_count": 5.0,
+      "cast_weight": 0.25,
+      "max_abs_cast_component": 0.25,
+      "director_weight": 0.5,
+      "runtime_weight": 0.25,
+      "release_era_weight": 0.25,
+      "language_weight": 0.25,
+      "max_abs_director_component": 0.5,
+      "max_abs_runtime_component": 0.25,
+      "max_abs_release_era_component": 0.25,
+      "max_abs_language_component": 0.25
+    },
+    "text": {
+      "source": "combined",
+      "representation": "tfidf",
+      "ngram_max": 1,
+      "min_df": 1,
+      "max_features": 10000,
+      "latent_dimensions": 32,
+      "regularization_strength": 5.0,
+      "weight": 1.0,
+      "max_adjustment": 0.5
+    }
+  },
+  "metrics": {
+    "structured_core": {
+      "recall_at_10": 0.02115451953494602,
+      "ndcg_at_10": 0.030933553139448303,
+      "recall_all_observed_positives_at_10": 0.02115451953494602,
+      "judged_fraction_at_10": 0.032299999999999995,
+      "recall_at_20": 0.031160345208244337,
+      "ndcg_at_20": 0.031976586568480146,
+      "recall_all_observed_positives_at_20": 0.031160345208244337,
+      "judged_fraction_at_20": 0.0266,
+      "users": 1000,
+      "users_with_eligible_positives": 987,
+      "users_without_eligible_positives": 13,
+      "users_without_outcomes": 0,
+      "positive_availability_fraction": 1.0,
+      "positives_total": 15347,
+      "positives_eligible": 15347,
+      "candidate_count_median": 9375.0,
+      "recommended_catalog_coverage": {
+        "10": 0.2612193056731583,
+        "20": 0.39892040643522436
+      }
+    },
+    "selected": {
+      "recall_at_10": 0.022322201393421955,
+      "ndcg_at_10": 0.03527490443613793,
+      "recall_all_observed_positives_at_10": 0.022322201393421955,
+      "judged_fraction_at_10": 0.03730000000000001,
+      "recall_at_20": 0.03270108857261852,
+      "ndcg_at_20": 0.03583325184102577,
+      "recall_all_observed_positives_at_20": 0.03270108857261852,
+      "judged_fraction_at_20": 0.0291,
+      "users": 1000,
+      "users_with_eligible_positives": 987,
+      "users_without_eligible_positives": 13,
+      "users_without_outcomes": 0,
+      "positive_availability_fraction": 1.0,
+      "positives_total": 15347,
+      "positives_eligible": 15347,
+      "candidate_count_median": 9375.0,
+      "recommended_catalog_coverage": {
+        "10": 0.32356054191363254,
+        "20": 0.4987298899237934
+      }
+    }
+  },
+  "selected_vs_core": {
+    "ndcg_at_10": {
+      "users": 987,
+      "mean_delta": 0.004341351296689633,
+      "ci95": [
+        0.0006486556240705631,
+        0.007978366717053641
+      ],
+      "familywise_ci95": [
+        0.0006486556240705631,
+        0.007978366717053641
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.05915445052857287,
+      "planning_mde_80pct_power": 0.0052751241550013876,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 275,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    },
+    "recall_at_10": {
+      "users": 987,
+      "mean_delta": 0.0011676818584759315,
+      "ci95": [
+        -0.0017750668319365488,
+        0.003919890707799416
+      ],
+      "familywise_ci95": [
+        -0.0017750668319365488,
+        0.003919890707799416
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.04529804734554597,
+      "planning_mde_80pct_power": 0.004039473304066389,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 162,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    },
+    "ndcg_at_20": {
+      "users": 987,
+      "mean_delta": 0.0038566652725456293,
+      "ci95": [
+        0.000540281445320713,
+        0.007080590869250926
+      ],
+      "familywise_ci95": [
+        0.000540281445320713,
+        0.007080590869250926
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.05225664208867983,
+      "planning_mde_80pct_power": 0.004660009052203221,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 215,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    },
+    "recall_at_20": {
+      "users": 987,
+      "mean_delta": 0.0015407433643741747,
+      "ci95": [
+        -0.002395091469398922,
+        0.005562097404490469
+      ],
+      "familywise_ci95": [
+        -0.002395091469398922,
+        0.005562097404490469
+      ],
+      "resamples": 10000,
+      "seed": 42,
+      "comparison_count": 1,
+      "paired_user_sd": 0.06304558625665603,
+      "planning_mde_80pct_power": 0.0056221178957290745,
+      "planning_minimum_effect": 0.01,
+      "planning_users_for_effect": 312,
+      "planning_caveat": "normal approximation, independent users, same future variance; zero observed variance cannot establish power"
+    }
+  },
+  "history_slices": {
+    "history_5_to_19": {
+      "structured_core": {
+        "recall_at_10": 0.023076923076923078,
+        "ndcg_at_10": 0.028704760424882104,
+        "recall_all_observed_positives_at_10": 0.023076923076923078,
+        "judged_fraction_at_10": 0.01076923076923077,
+        "recall_at_20": 0.026923076923076925,
+        "ndcg_at_20": 0.030206222155620955,
+        "recall_all_observed_positives_at_20": 0.026923076923076925,
+        "judged_fraction_at_20": 0.006153846153846154,
+        "users": 65,
+        "users_with_eligible_positives": 65,
+        "users_without_eligible_positives": 0,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 1.0,
+        "positives_total": 230,
+        "positives_eligible": 230,
+        "candidate_count_median": 9424.0
+      },
+      "selected": {
+        "recall_at_10": 0.019230769230769232,
+        "ndcg_at_10": 0.02547732939659336,
+        "recall_all_observed_positives_at_10": 0.019230769230769232,
+        "judged_fraction_at_10": 0.00923076923076923,
+        "recall_at_20": 0.04769230769230769,
+        "ndcg_at_20": 0.035083154881445235,
+        "recall_all_observed_positives_at_20": 0.04769230769230769,
+        "judged_fraction_at_20": 0.008461538461538463,
+        "users": 65,
+        "users_with_eligible_positives": 65,
+        "users_without_eligible_positives": 0,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 1.0,
+        "positives_total": 230,
+        "positives_eligible": 230,
+        "candidate_count_median": 9424.0
+      }
+    },
+    "history_20_to_99": {
+      "structured_core": {
+        "recall_at_10": 0.02197216923135537,
+        "ndcg_at_10": 0.02209175126420638,
+        "recall_all_observed_positives_at_10": 0.02197216923135537,
+        "judged_fraction_at_10": 0.02121739130434783,
+        "recall_at_20": 0.03272360687429166,
+        "ndcg_at_20": 0.02589776027361082,
+        "recall_all_observed_positives_at_20": 0.03272360687429166,
+        "judged_fraction_at_20": 0.01634782608695652,
+        "users": 575,
+        "users_with_eligible_positives": 566,
+        "users_without_eligible_positives": 9,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 1.0,
+        "positives_total": 4829,
+        "positives_eligible": 4829,
+        "candidate_count_median": 9399.0
+      },
+      "selected": {
+        "recall_at_10": 0.023468149308219166,
+        "ndcg_at_10": 0.02664731208041888,
+        "recall_all_observed_positives_at_10": 0.023468149308219166,
+        "judged_fraction_at_10": 0.025217391304347827,
+        "recall_at_20": 0.03138312555590882,
+        "ndcg_at_20": 0.02888453035010179,
+        "recall_all_observed_positives_at_20": 0.03138312555590882,
+        "judged_fraction_at_20": 0.017391304347826087,
+        "users": 575,
+        "users_with_eligible_positives": 566,
+        "users_without_eligible_positives": 9,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 1.0,
+        "positives_total": 4829,
+        "positives_eligible": 4829,
+        "candidate_count_median": 9399.0
+      }
+    },
+    "history_100_plus": {
+      "structured_core": {
+        "recall_at_10": 0.019503547741698272,
+        "ndcg_at_10": 0.045397967150217204,
+        "recall_all_observed_positives_at_10": 0.019503547741698272,
+        "judged_fraction_at_10": 0.05388888888888888,
+        "recall_at_20": 0.029448593341820463,
+        "ndcg_at_20": 0.04196447805649107,
+        "recall_all_observed_positives_at_20": 0.029448593341820463,
+        "judged_fraction_at_20": 0.04666666666666667,
+        "users": 360,
+        "users_with_eligible_positives": 356,
+        "users_without_eligible_positives": 4,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 1.0,
+        "positives_total": 10288,
+        "positives_eligible": 10288,
+        "candidate_count_median": 9255.5
+      },
+      "selected": {
+        "recall_at_10": 0.02106471985071747,
+        "ndcg_at_10": 0.05078068997239463,
+        "recall_all_observed_positives_at_10": 0.02106471985071747,
+        "judged_fraction_at_10": 0.06166666666666666,
+        "recall_at_20": 0.03205934088912944,
+        "ndcg_at_20": 0.0470178941619126,
+        "recall_all_observed_positives_at_20": 0.03205934088912944,
+        "judged_fraction_at_20": 0.051527777777777777,
+        "users": 360,
+        "users_with_eligible_positives": 356,
+        "users_without_eligible_positives": 4,
+        "users_without_outcomes": 0,
+        "positive_availability_fraction": 1.0,
+        "positives_total": 10288,
+        "positives_eligible": 10288,
+        "candidate_count_median": 9255.5
+      }
+    }
+  },
+  "unique_eligible_movies": 9448,
+  "elapsed_seconds": 1038.425540333963
+}
