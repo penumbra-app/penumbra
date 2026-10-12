@@ -1,0 +1,185 @@
+{
+  "protocol": "shared per-user chronological 60/20/20; fit 60%; no test refit",
+  "ranking_candidates": "held-out rated movies only; liked means rating >= 4",
+  "ranking_policy": "binary NDCG@10, expected gain for tied scores; macro average over users with likes; pairwise excludes equal ratings and gives score ties half credit",
+  "ablation_policy": "one contribution removed at inference using identical fitted weights; not separately retrained models",
+  "selection_metric": "validation RMSE, alphabetical exact tiebreak; diagnostic selection only, no artifact promotion",
+  "selected_variant": "full",
+  "settings": {
+    "n_factors": 20,
+    "learning_rate": 0.005,
+    "regularization": 0.02,
+    "n_epochs": 40,
+    "prior_strength": 5.0,
+    "random_state": 42,
+    "shrink_latent": true
+  },
+  "split_counts": {
+    "train": 60255,
+    "test": 20417,
+    "validation": 20164
+  },
+  "split_sha256": "e4f31a01ce732608b5e520109ccb4d9415bb387703f71832e19a609bc983f172",
+  "versions": {
+    "python": "3.14.7",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "scikit_learn": "1.9.1",
+    "joblib": "1.6.0"
+  },
+  "baseline_settings": {
+    "prior_strength": 10.0
+  },
+  "caveat": "Development benchmark: holdout and 40-epoch configuration were examined in prior work. No statistical significance or full-catalog retrieval claim.",
+  "results": {
+    "validation": {
+      "baseline": {
+        "mae": 0.7528595148636368,
+        "rmse": 0.974265401749899,
+        "pairwise_accuracy_macro": 0.6263716212665433,
+        "pairwise_accuracy_micro": 0.636973378625909,
+        "ndcg_at_10": 0.7771216421492843,
+        "ratings": 20164,
+        "users": 610,
+        "pairs": 945556,
+        "pairwise_users": 605,
+        "ndcg_users": 595
+      },
+      "full": {
+        "mae": 0.6836222206637657,
+        "rmse": 0.8882789479987666,
+        "pairwise_accuracy_macro": 0.6299262554339485,
+        "pairwise_accuracy_micro": 0.6491656760678374,
+        "ndcg_at_10": 0.7824581927555536,
+        "ratings": 20164,
+        "users": 610,
+        "pairs": 945556,
+        "pairwise_users": 605,
+        "ndcg_users": 595
+      },
+      "without_shrinkage": {
+        "mae": 0.684108597938939,
+        "rmse": 0.8896288580453698,
+        "pairwise_accuracy_macro": 0.6296173203174974,
+        "pairwise_accuracy_micro": 0.6448079225344665,
+        "ndcg_at_10": 0.783992475885398,
+        "ratings": 20164,
+        "users": 610,
+        "pairs": 945556,
+        "pairwise_users": 605,
+        "ndcg_users": 595
+      },
+      "without_latent": {
+        "mae": 0.686119552931503,
+        "rmse": 0.8901827828648761,
+        "pairwise_accuracy_macro": 0.6290134691716603,
+        "pairwise_accuracy_micro": 0.6525298342985503,
+        "ndcg_at_10": 0.7746658493120732,
+        "ratings": 20164,
+        "users": 610,
+        "pairs": 945556,
+        "pairwise_users": 605,
+        "ndcg_users": 595
+      },
+      "without_user_bias": {
+        "mae": 0.74803216408234,
+        "rmse": 0.9756271102797687,
+        "pairwise_accuracy_macro": 0.6298946100146027,
+        "pairwise_accuracy_micro": 0.6491625033313733,
+        "ndcg_at_10": 0.7824769755413845,
+        "ratings": 20164,
+        "users": 610,
+        "pairs": 945556,
+        "pairwise_users": 605,
+        "ndcg_users": 595
+      },
+      "without_movie_bias": {
+        "mae": 0.753952273544426,
+        "rmse": 0.9544891884536678,
+        "pairwise_accuracy_macro": 0.5240764605233474,
+        "pairwise_accuracy_micro": 0.537941169005326,
+        "ndcg_at_10": 0.705650661998398,
+        "ratings": 20164,
+        "users": 610,
+        "pairs": 945556,
+        "pairwise_users": 605,
+        "ndcg_users": 595
+      }
+    },
+    "test": {
+      "baseline": {
+        "mae": 0.7836518153179082,
+        "rmse": 1.012584310043686,
+        "pairwise_accuracy_macro": 0.6177859141869999,
+        "pairwise_accuracy_micro": 0.6359460174424473,
+        "ndcg_at_10": 0.7675116611262661,
+        "ratings": 20417,
+        "users": 610,
+        "pairs": 941267,
+        "pairwise_users": 601,
+        "ndcg_users": 591
+      },
+      "full": {
+        "mae": 0.7090065507547456,
+        "rmse": 0.921150756467837,
+        "pairwise_accuracy_macro": 0.6238132867255243,
+        "pairwise_accuracy_micro": 0.6434353908083467,
+        "ndcg_at_10": 0.7666851595306597,
+        "ratings": 20417,
+        "users": 610,
+        "pairs": 941267,
+        "pairwise_users": 601,
+        "ndcg_users": 591
+      },
+      "without_shrinkage": {
+        "mae": 0.7095166848329856,
+        "rmse": 0.9222367814567933,
+        "pairwise_accuracy_macro": 0.6213263817773346,
+        "pairwise_accuracy_micro": 0.6403778099094093,
+        "ndcg_at_10": 0.7658435776734797,
+        "ratings": 20417,
+        "users": 610,
+        "pairs": 941267,
+        "pairwise_users": 601,
+        "ndcg_users": 591
+      },
+      "without_latent": {
+        "mae": 0.7105469998623816,
+        "rmse": 0.9226995551734393,
+        "pairwise_accuracy_macro": 0.6258529838940219,
+        "pairwise_accuracy_micro": 0.642651341224116,
+        "ndcg_at_10": 0.7671652373629246,
+        "ratings": 20417,
+        "users": 610,
+        "pairs": 941267,
+        "pairwise_users": 601,
+        "ndcg_users": 591
+      },
+      "without_user_bias": {
+        "mae": 0.774714851692604,
+        "rmse": 1.0122829964819575,
+        "pairwise_accuracy_macro": 0.6239930237858751,
+        "pairwise_accuracy_micro": 0.6434428275930208,
+        "ndcg_at_10": 0.7665789131643267,
+        "ratings": 20417,
+        "users": 610,
+        "pairs": 941267,
+        "pairwise_users": 601,
+        "ndcg_users": 591
+      },
+      "without_movie_bias": {
+        "mae": 0.7786116401940003,
+        "rmse": 0.9851639590303639,
+        "pairwise_accuracy_macro": 0.5135969091656352,
+        "pairwise_accuracy_micro": 0.5328387163259733,
+        "ndcg_at_10": 0.7077955718076347,
+        "ratings": 20417,
+        "users": 610,
+        "pairs": 941267,
+        "pairwise_users": 601,
+        "ndcg_users": 591
+      }
+    }
+  },
+  "input_sha256": "80da8b3393dae325bbba5a31f291a6ba55d8d4f4396de3c456f2c1635b1b70e8"
+}

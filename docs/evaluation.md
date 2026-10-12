@@ -650,3 +650,21 @@ The final evidence supports three conclusions:
 3. Model complexity is not itself an improvement; the chosen model must remain tied to measured ranking performance.
 
 Week 7 can therefore proceed using the pairwise logistic Hybrid as the advanced single-user reranking foundation while work shifts toward group recommendation and production hardening.
+
+---
+
+## Collaborative: Week 5 Procedure
+
+The Collaborative benchmark uses the shared chronological evaluation split and ranking metrics.
+
+Run:
+
+`python -m src.collaborative.evaluation.benchmark`
+
+The benchmark fits upstream models using permitted training data, evaluates on held-out observations, and exports per-user metrics and aggregate results.
+
+See:
+- `src/collaborative/README.md`
+- `src/collaborative/artifacts/benchmark/results.json`
+
+EASE and pairwise-factorization experiments are evaluated separately and must not be treated as automatic replacements for the selected MF model.
