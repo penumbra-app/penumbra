@@ -71,13 +71,8 @@ def parse_arguments():
 
 
 def load_content_configuration(report_path):
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-
-    return (
-        ScoringConfig(**report["selected_config"]),
-        ProfileConfig(**report["profile_config"]),
-        str(report["selected_variant"]),
-    )
+    from src.scripts.week6_ablations import load_content_configuration as load_compatible
+    return load_compatible(report_path)
 
 
 def prepare_evaluation_data(ratings):

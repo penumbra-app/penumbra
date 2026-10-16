@@ -1,0 +1,680 @@
+[
+  {
+    "user_id": 1,
+    "history": [
+      {
+        "userId": 1,
+        "movieId": 1,
+        "rating": 5.0,
+        "timestamp": 100
+      }
+    ],
+    "references": [
+      {
+        "userId": 2,
+        "movieId": 1,
+        "rating": 2.0,
+        "timestamp": 0
+      },
+      {
+        "userId": 2,
+        "movieId": 2,
+        "rating": 3.0,
+        "timestamp": 1
+      },
+      {
+        "userId": 2,
+        "movieId": 3,
+        "rating": 4.0,
+        "timestamp": 2
+      },
+      {
+        "userId": 2,
+        "movieId": 4,
+        "rating": 5.0,
+        "timestamp": 3
+      },
+      {
+        "userId": 2,
+        "movieId": 5,
+        "rating": 3.0,
+        "timestamp": 4
+      },
+      {
+        "userId": 2,
+        "movieId": 6,
+        "rating": 4.0,
+        "timestamp": 5
+      },
+      {
+        "userId": 2,
+        "movieId": 7,
+        "rating": 2.0,
+        "timestamp": 6
+      },
+      {
+        "userId": 2,
+        "movieId": 1,
+        "rating": 2.0,
+        "timestamp": 7
+      },
+      {
+        "userId": 2,
+        "movieId": 2,
+        "rating": 3.0,
+        "timestamp": 8
+      },
+      {
+        "userId": 2,
+        "movieId": 3,
+        "rating": 4.0,
+        "timestamp": 9
+      },
+      {
+        "userId": 2,
+        "movieId": 4,
+        "rating": 5.0,
+        "timestamp": 10
+      },
+      {
+        "userId": 2,
+        "movieId": 5,
+        "rating": 3.0,
+        "timestamp": 11
+      },
+      {
+        "userId": 2,
+        "movieId": 6,
+        "rating": 4.0,
+        "timestamp": 12
+      },
+      {
+        "userId": 2,
+        "movieId": 7,
+        "rating": 2.0,
+        "timestamp": 13
+      }
+    ],
+    "movies": [
+      {
+        "movieId": 1,
+        "title": "A (1980)",
+        "genres": "Drama"
+      },
+      {
+        "movieId": 2,
+        "title": "B (2000)",
+        "genres": "Comedy"
+      },
+      {
+        "movieId": 3,
+        "title": "C (2010)",
+        "genres": "Drama|Comedy"
+      },
+      {
+        "movieId": 4,
+        "title": "D (1990)",
+        "genres": "Action"
+      },
+      {
+        "movieId": 5,
+        "title": "E (2020)",
+        "genres": "Drama|Action"
+      },
+      {
+        "movieId": 6,
+        "title": "F",
+        "genres": ""
+      },
+      {
+        "movieId": 7,
+        "title": "G (1950)",
+        "genres": "(no genres listed)"
+      },
+      {
+        "movieId": 8,
+        "title": "H (2024)",
+        "genres": "Mystery"
+      }
+    ],
+    "movie_ids": [
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "expected": [
+      {
+        "movie_id": 1,
+        "title": "A (1980)",
+        "genres": "Drama",
+        "predicted_rating": 4.957142857142857,
+        "personal_score": 0.0,
+        "quality_score": -0.2142857142857144,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 2,
+        "title": "B (2000)",
+        "genres": "Comedy",
+        "predicted_rating": 4.9904761904761905,
+        "personal_score": 0.0,
+        "quality_score": -0.047619047619047894,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 3,
+        "title": "C (2010)",
+        "genres": "Drama|Comedy",
+        "predicted_rating": 5.0,
+        "personal_score": 0.0,
+        "quality_score": 0.11904761904761907,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 4,
+        "title": "D (1990)",
+        "genres": "Action",
+        "predicted_rating": 5.0,
+        "personal_score": 0.0,
+        "quality_score": 0.2857142857142856,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 5,
+        "title": "E (2020)",
+        "genres": "Drama|Action",
+        "predicted_rating": 4.9904761904761905,
+        "personal_score": 0.0,
+        "quality_score": -0.047619047619047894,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 6,
+        "title": "F",
+        "genres": "",
+        "predicted_rating": 5.0,
+        "personal_score": 0.0,
+        "quality_score": 0.11904761904761907,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 7,
+        "title": "G (1950)",
+        "genres": "(no genres listed)",
+        "predicted_rating": 4.957142857142857,
+        "personal_score": 0.0,
+        "quality_score": -0.2142857142857144,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      }
+    ]
+  },
+  {
+    "user_id": 1,
+    "history": [
+      {
+        "userId": 1,
+        "movieId": 1,
+        "rating": 5.0,
+        "timestamp": 100
+      },
+      {
+        "userId": 1,
+        "movieId": 2,
+        "rating": 1.0,
+        "timestamp": 200
+      },
+      {
+        "userId": 1,
+        "movieId": 3,
+        "rating": 3.0,
+        "timestamp": 300
+      }
+    ],
+    "references": [
+      {
+        "userId": 2,
+        "movieId": 1,
+        "rating": 2.0,
+        "timestamp": 0
+      },
+      {
+        "userId": 2,
+        "movieId": 2,
+        "rating": 3.0,
+        "timestamp": 1
+      },
+      {
+        "userId": 2,
+        "movieId": 3,
+        "rating": 4.0,
+        "timestamp": 2
+      },
+      {
+        "userId": 2,
+        "movieId": 4,
+        "rating": 5.0,
+        "timestamp": 3
+      },
+      {
+        "userId": 2,
+        "movieId": 5,
+        "rating": 3.0,
+        "timestamp": 4
+      },
+      {
+        "userId": 2,
+        "movieId": 6,
+        "rating": 4.0,
+        "timestamp": 5
+      },
+      {
+        "userId": 2,
+        "movieId": 7,
+        "rating": 2.0,
+        "timestamp": 6
+      },
+      {
+        "userId": 2,
+        "movieId": 1,
+        "rating": 2.0,
+        "timestamp": 7
+      },
+      {
+        "userId": 2,
+        "movieId": 2,
+        "rating": 3.0,
+        "timestamp": 8
+      },
+      {
+        "userId": 2,
+        "movieId": 3,
+        "rating": 4.0,
+        "timestamp": 9
+      },
+      {
+        "userId": 2,
+        "movieId": 4,
+        "rating": 5.0,
+        "timestamp": 10
+      },
+      {
+        "userId": 2,
+        "movieId": 5,
+        "rating": 3.0,
+        "timestamp": 11
+      },
+      {
+        "userId": 2,
+        "movieId": 6,
+        "rating": 4.0,
+        "timestamp": 12
+      },
+      {
+        "userId": 2,
+        "movieId": 7,
+        "rating": 2.0,
+        "timestamp": 13
+      }
+    ],
+    "movies": [
+      {
+        "movieId": 1,
+        "title": "A (1980)",
+        "genres": "Drama"
+      },
+      {
+        "movieId": 2,
+        "title": "B (2000)",
+        "genres": "Comedy"
+      },
+      {
+        "movieId": 3,
+        "title": "C (2010)",
+        "genres": "Drama|Comedy"
+      },
+      {
+        "movieId": 4,
+        "title": "D (1990)",
+        "genres": "Action"
+      },
+      {
+        "movieId": 5,
+        "title": "E (2020)",
+        "genres": "Drama|Action"
+      },
+      {
+        "movieId": 6,
+        "title": "F",
+        "genres": ""
+      },
+      {
+        "movieId": 7,
+        "title": "G (1950)",
+        "genres": "(no genres listed)"
+      },
+      {
+        "movieId": 8,
+        "title": "H (2024)",
+        "genres": "Mystery"
+      }
+    ],
+    "movie_ids": [
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "expected": [
+      {
+        "movie_id": 1,
+        "title": "A (1980)",
+        "genres": "Drama",
+        "predicted_rating": 3.249113119014989,
+        "personal_score": 0.2919706279471764,
+        "quality_score": -0.2142857142857144,
+        "explanation": "Recommended mainly because of your positive history with Drama movies."
+      },
+      {
+        "movie_id": 2,
+        "title": "B (2000)",
+        "genres": "Comedy",
+        "predicted_rating": 2.702706278221778,
+        "personal_score": -0.2877695461793674,
+        "quality_score": -0.047619047619047894,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 3,
+        "title": "C (2010)",
+        "genres": "Drama|Comedy",
+        "predicted_rating": 3.0112061477154897,
+        "personal_score": -0.012603010018988961,
+        "quality_score": 0.11904761904761907,
+        "explanation": "Recommended mainly because of your positive history with Drama movies."
+      },
+      {
+        "movie_id": 4,
+        "title": "D (1990)",
+        "genres": "Action",
+        "predicted_rating": 3.057142491067812,
+        "personal_score": 0.0,
+        "quality_score": 0.2857142857142856,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 5,
+        "title": "E (2020)",
+        "genres": "Drama|Action",
+        "predicted_rating": 3.227512726879238,
+        "personal_score": 0.23703690247809256,
+        "quality_score": -0.047619047619047894,
+        "explanation": "Recommended mainly because of your positive history with Drama movies."
+      },
+      {
+        "movie_id": 6,
+        "title": "F",
+        "genres": "",
+        "predicted_rating": 3.023809157734479,
+        "personal_score": 0.0,
+        "quality_score": 0.11904761904761907,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 7,
+        "title": "G (1950)",
+        "genres": "(no genres listed)",
+        "predicted_rating": 2.9571424910678124,
+        "personal_score": 0.0,
+        "quality_score": -0.2142857142857144,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      }
+    ]
+  },
+  {
+    "user_id": 1,
+    "history": [
+      {
+        "userId": 1,
+        "movieId": 1,
+        "rating": 5.0,
+        "timestamp": 100
+      },
+      {
+        "userId": 1,
+        "movieId": 2,
+        "rating": 1.0,
+        "timestamp": 200
+      },
+      {
+        "userId": 1,
+        "movieId": 3,
+        "rating": 3.0,
+        "timestamp": 300
+      },
+      {
+        "userId": 1,
+        "movieId": 1,
+        "rating": 4.0,
+        "timestamp": 400
+      },
+      {
+        "userId": 1,
+        "movieId": 4,
+        "rating": 2.0,
+        "timestamp": 500
+      }
+    ],
+    "references": [
+      {
+        "userId": 2,
+        "movieId": 1,
+        "rating": 2.0,
+        "timestamp": 0
+      },
+      {
+        "userId": 2,
+        "movieId": 2,
+        "rating": 3.0,
+        "timestamp": 1
+      },
+      {
+        "userId": 2,
+        "movieId": 3,
+        "rating": 4.0,
+        "timestamp": 2
+      },
+      {
+        "userId": 2,
+        "movieId": 4,
+        "rating": 5.0,
+        "timestamp": 3
+      },
+      {
+        "userId": 2,
+        "movieId": 5,
+        "rating": 3.0,
+        "timestamp": 4
+      },
+      {
+        "userId": 2,
+        "movieId": 6,
+        "rating": 4.0,
+        "timestamp": 5
+      },
+      {
+        "userId": 2,
+        "movieId": 7,
+        "rating": 2.0,
+        "timestamp": 6
+      },
+      {
+        "userId": 2,
+        "movieId": 1,
+        "rating": 2.0,
+        "timestamp": 7
+      },
+      {
+        "userId": 2,
+        "movieId": 2,
+        "rating": 3.0,
+        "timestamp": 8
+      },
+      {
+        "userId": 2,
+        "movieId": 3,
+        "rating": 4.0,
+        "timestamp": 9
+      },
+      {
+        "userId": 2,
+        "movieId": 4,
+        "rating": 5.0,
+        "timestamp": 10
+      },
+      {
+        "userId": 2,
+        "movieId": 5,
+        "rating": 3.0,
+        "timestamp": 11
+      },
+      {
+        "userId": 2,
+        "movieId": 6,
+        "rating": 4.0,
+        "timestamp": 12
+      },
+      {
+        "userId": 2,
+        "movieId": 7,
+        "rating": 2.0,
+        "timestamp": 13
+      }
+    ],
+    "movies": [
+      {
+        "movieId": 1,
+        "title": "A (1980)",
+        "genres": "Drama"
+      },
+      {
+        "movieId": 2,
+        "title": "B (2000)",
+        "genres": "Comedy"
+      },
+      {
+        "movieId": 3,
+        "title": "C (2010)",
+        "genres": "Drama|Comedy"
+      },
+      {
+        "movieId": 4,
+        "title": "D (1990)",
+        "genres": "Action"
+      },
+      {
+        "movieId": 5,
+        "title": "E (2020)",
+        "genres": "Drama|Action"
+      },
+      {
+        "movieId": 6,
+        "title": "F",
+        "genres": ""
+      },
+      {
+        "movieId": 7,
+        "title": "G (1950)",
+        "genres": "(no genres listed)"
+      },
+      {
+        "movieId": 8,
+        "title": "H (2024)",
+        "genres": "Mystery"
+      }
+    ],
+    "movie_ids": [
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "expected": [
+      {
+        "movie_id": 1,
+        "title": "A (1980)",
+        "genres": "Drama",
+        "predicted_rating": 3.3393078019399995,
+        "personal_score": 0.38216527426468283,
+        "quality_score": -0.2142857142857144,
+        "explanation": "Recommended mainly because of your positive history with Drama movies."
+      },
+      {
+        "movie_id": 2,
+        "title": "B (2000)",
+        "genres": "Comedy",
+        "predicted_rating": 2.7027065319219963,
+        "personal_score": -0.287769329086654,
+        "quality_score": -0.047619047619047894,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 3,
+        "title": "C (2010)",
+        "genres": "Drama|Comedy",
+        "predicted_rating": 3.0527030402539417,
+        "personal_score": 0.028893845911958205,
+        "quality_score": 0.11904761904761907,
+        "explanation": "Recommended mainly because of your positive history with Drama movies."
+      },
+      {
+        "movie_id": 4,
+        "title": "D (1990)",
+        "genres": "Action",
+        "predicted_rating": 2.8904759159199065,
+        "personal_score": -0.16666661175540992,
+        "quality_score": 0.2857142857142856,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 5,
+        "title": "E (2020)",
+        "genres": "Drama|Action",
+        "predicted_rating": 3.076766571658391,
+        "personal_score": 0.086290710649741,
+        "quality_score": -0.047619047619047894,
+        "explanation": "Recommended mainly because of your positive history with Drama movies."
+      },
+      {
+        "movie_id": 6,
+        "title": "F",
+        "genres": "",
+        "predicted_rating": 3.0238091943419834,
+        "personal_score": 0.0,
+        "quality_score": 0.11904761904761907,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      },
+      {
+        "movie_id": 7,
+        "title": "G (1950)",
+        "genres": "(no genres listed)",
+        "predicted_rating": 2.957142527675317,
+        "personal_score": 0.0,
+        "quality_score": -0.2142857142857144,
+        "explanation": "This movie has a solid overall rating, although its genres are not a strong personal match yet."
+      }
+    ]
+  }
+]

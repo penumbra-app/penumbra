@@ -37,6 +37,8 @@ def rerank_for_diversity(
     recommendations: Sequence[RecommendationLike],
     limit: int,
     diversity_weight: float = 0.15,
+    *,
+    tie_breaker=None,
 ) -> list[RecommendationLike]:
     """
     Greedily select recommendations while penalizing movies that are
@@ -82,7 +84,9 @@ def rerank_for_diversity(
                 - diversity_weight * max_similarity
             )
 
-            if adjusted_score > best_adjusted_score:
+            if (adjusted_score > best_adjusted_score
+                    or (tie_breaker is not None and adjusted_score == best_adjusted_score
+                        and tie_breaker(candidate) < tie_breaker(remaining[best_index]))):
                 best_adjusted_score = adjusted_score
                 best_index = index
 

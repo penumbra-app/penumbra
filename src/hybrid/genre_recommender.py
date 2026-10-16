@@ -251,6 +251,13 @@ def score_movies_by_genre(
             history["genre_list"].map(lambda genres: genre in genres)
         ]
 
+    genre_arrays = {
+        genre: (rows["release_year"].to_numpy(dtype=float),
+                rows["recency_weight"].to_numpy(dtype=float),
+                rows["rating"].to_numpy())
+        for genre, rows in genre_history.items()
+    }
+
     candidates = (
         prepared_movies.loc[
             prepared_movies["movieId"].isin(movie_ids)
@@ -265,20 +272,20 @@ def score_movies_by_genre(
         genre_details: list[tuple[str, float, float]] = []
 
         for genre in candidate.genre_list:
-            matching_history = genre_history.get(genre)
-
-            if matching_history is None or matching_history.empty:
+            arrays = genre_arrays.get(genre)
+            if arrays is None:
                 continue
+            rated_years, recency_weights, rated_values = arrays
 
             year_weights = calculate_year_weights(
-                matching_history["release_year"].to_numpy(dtype=float),
+                rated_years,
                 float(candidate.release_year),
                 year_penalty_per_year,
                 minimum_year_weight,
             )
 
             combined_weights = (
-                matching_history["recency_weight"].to_numpy(dtype=float)
+                recency_weights
                 * year_weights
             )
 
@@ -289,7 +296,7 @@ def score_movies_by_genre(
 
             weighted_genre_average = float(
                 np.average(
-                    matching_history["rating"],
+                    rated_values,
                     weights=combined_weights,
                 )
             )

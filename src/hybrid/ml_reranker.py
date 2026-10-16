@@ -14,6 +14,8 @@ from src.hybrid.genre_recommender import score_movies_by_genre
 from src.collaborative.matrix_factorization import BiasedMatrixFactorization
 from src.hybrid.content_adapter import build_content_model_from_frames
 
+from pathlib import Path
+
 @dataclass(frozen=True)
 class HybridCandidate:
     movie_id: int
@@ -690,6 +692,7 @@ def build_hybrid_training_dataset(
     profile_config: ProfileConfig | None = None,
     include_content_confidence: bool = False,
     include_personal: bool = False,
+    train_fraction: float = 0.20,
 ) -> tuple[np.ndarray, np.ndarray, int]:
 
     user_splits: dict[
@@ -711,7 +714,9 @@ def build_hybrid_training_dataset(
             continue
 
         profile, train, _ = chronological_split(
-            user_ratings
+            user_ratings,
+            profile_fraction=0.60,
+            train_fraction=train_fraction,
         )
 
         user_splits[user_id] = (
@@ -810,6 +815,9 @@ def build_ablation_training_dataset(
     profile_config: ProfileConfig | None = None,
     *,
     return_user_weights: bool = False,
+    use_selected_content: bool = False,
+    selected_config_path: str | Path | None = None,
+    train_fraction: float = 0.20,
 ) -> (
     tuple[np.ndarray, np.ndarray, int]
     | tuple[np.ndarray, np.ndarray, int, np.ndarray]
@@ -831,7 +839,11 @@ def build_ablation_training_dataset(
         if len(user_ratings) < 10:
             continue
 
-        profile, train, _ = chronological_split(user_ratings)
+        profile, train, _ = chronological_split(
+            user_ratings,
+            profile_fraction=0.60,
+            train_fraction=train_fraction,
+        )
 
         user_splits[user_id] = (profile, train)
         profile_parts.append(profile)
@@ -871,6 +883,8 @@ def build_ablation_training_dataset(
             movies=movies,
             scoring_config=scoring_config,
             profile_config=profile_config,
+            use_selected_content=use_selected_content,
+            selected_config_path=selected_config_path,
         )
 
         result = build_user_ablation_training_examples(

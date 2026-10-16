@@ -65,7 +65,7 @@ def main() -> None:
         )
 
         profile_config = ProfileConfig(
-            **report["profile_config"]
+            **{k: v for k, v in report["profile_config"].items() if k != "max_cast_members"}
         )
 
         print(

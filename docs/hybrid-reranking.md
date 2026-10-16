@@ -657,3 +657,8 @@ Week 5 established that complementary information matters more than simply addin
 Week 3 integrated standalone Content and MF into the reranker and established the first complete hybrid architecture.
 
 Those historical models and ablations remain preserved for reproducibility, but Week 6 supersedes them as the current advanced-hybrid benchmark.
+
+
+# Current Week 8 freeze
+
+The Week 6 decisions and metric tables above remain historical. The frozen serving choice is the unbalanced Week 7 TF-IDF five-signal bundle; its historical results are unchanged in `docs/week7-finalization.md`. Current individual/group architecture, cache behavior, lifecycle semantics, freeze decisions and release limitations are in [Week 8 finalization](week8-finalization.md) and [rating updates](rating-updates.md). The legacy default API remains available; the five-signal path is explicit through `week7_bundle`. No new training or final-test evaluation was performed in finalization.

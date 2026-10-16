@@ -73,8 +73,13 @@ def load_content_configuration(
         **report["selected_config"]
     )
 
+    profile_settings = report["profile_config"].copy()
+
+    # Removed from the new Content API.
+    profile_settings.pop("max_cast_members", None)
+
     profile_config = ProfileConfig(
-        **report["profile_config"]
+        **profile_settings
     )
 
     selected_variant = str(
@@ -109,6 +114,13 @@ def main() -> None:
         default=Path("src/models/week6_ablations"),
     )
 
+    parser.add_argument(
+        "--selected-content-config",
+        type=Path,
+        default=None,
+        help="Use the selected TF-IDF Content preset from this JSON file.",
+    )
+
     args = parser.parse_args()
 
     ratings, movies = load_movielens(
@@ -116,13 +128,16 @@ def main() -> None:
         movies_path=args.movies,
     )
 
-    (
-        scoring_config,
-        profile_config,
-        selected_variant,
-    ) = load_content_configuration(
-        args.content_report
-    )
+    if args.selected_content_config is not None:
+        scoring_config = None
+        profile_config = None
+        selected_variant = f"selected: {args.selected_content_config}"
+    else:
+        (
+            scoring_config,
+            profile_config,
+            selected_variant,
+        ) = load_content_configuration(args.content_report)
 
     args.output_dir.mkdir(
         parents=True,
@@ -151,6 +166,8 @@ def main() -> None:
             features=features,
             scoring_config=scoring_config,
             profile_config=profile_config,
+            use_selected_content=args.selected_content_config is not None,
+            selected_config_path=args.selected_content_config,
         )
 
         if X.shape[1] != len(features):

@@ -19,18 +19,23 @@ def recommend_for_user(
     ratings: pd.DataFrame,
     movies: pd.DataFrame,
     limit: int = 10,
+    *,
+    week7_bundle=None,
 ) -> list[Recommendation]:
     if limit <= 0:
         return []
 
     candidate_limit = max(limit * 5, limit)
 
-    ranked = recommend_with_ml(
-        user_id=user_id,
-        ratings=ratings,
-        movies=movies,
-        limit=candidate_limit,
-    )
+    if week7_bundle is None:
+        ranked = recommend_with_ml(
+            user_id=user_id, ratings=ratings, movies=movies, limit=candidate_limit,
+        )
+    else:
+        from .week7 import recommend_week7
+        ranked = recommend_week7(
+            user_id, ratings, movies, candidate_limit, bundle=week7_bundle,
+        )
 
     candidates = [
         Recommendation(

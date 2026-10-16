@@ -43,11 +43,7 @@ def load_content_configuration(
                 "selected_config"
             ]
         ),
-        ProfileConfig(
-            **report[
-                "profile_config"
-            ]
-        ),
+        ProfileConfig(**{k: v for k, v in report["profile_config"].items() if k != "max_cast_members"}),
         str(
             report[
                 "selected_variant"
