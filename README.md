@@ -67,7 +67,7 @@ Penumbra supports multiple ranking configurations using signals such as:
 - Movie quality
 - Movie popularity
 
-The strongest currently validated ranking model uses:
+The historical three-feature baseline uses:
 
 `Personal + Quality + Popularity → Pairwise Logistic Regression`
 
@@ -85,7 +85,7 @@ Detailed ranking methodology, experiments, ablations, and benchmark history are 
 
 # Final Recommendation Pipeline
 
-The current single-user Penumbra recommendation flow is:
+The legacy default CLI recommendation flow is (the frozen Week 7 route is documented below):
 
 ```text
 User Ratings
@@ -103,3 +103,14 @@ Retain larger high-relevance candidate pool
 Genre-based diversity reranking
     ↓
 Final Top-K recommendations
+
+## Frozen Hybrid and Group integration (Week 9)
+
+Use the [Week 9 release and setup contract](docs/week9-release-readiness.md) and
+[engineering freeze](docs/week9-finalization.md) for the selected five-feature
+Week 7 model, Group V1, trusted artifact loading and versioned rating snapshots.
+[Performance](docs/week9-performance.md) and [evaluation audit](docs/week9-evaluation.md)
+separate measured evidence from deployment limits. Serving dependencies are pinned
+in requirements-serving.txt; the artifact manifest is docs/week9-artifact-manifest.json.
+The legacy default CLI remains supported; `python main.py --week7` explicitly selects
+the frozen Hybrid. Do not regenerate/train the frozen release to resolve missing files.

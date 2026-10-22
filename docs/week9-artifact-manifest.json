@@ -1,0 +1,35 @@
+{
+  "release": "penumbra-week9-v1",
+  "schema_version": 1,
+  "features": [
+    "collaborative",
+    "personal",
+    "content",
+    "quality",
+    "popularity"
+  ],
+  "artifact": {
+    "path": "src/models/week7_serving.joblib",
+    "sha256": "3ed639f5a58fa1029523ed925cb3a31050e502f40f4af989e550db632e1b3cb3",
+    "bytes": 9788194
+  },
+  "config": {
+    "path": "handoff_inputs/reports/tmdb-full/selected_config.json",
+    "sha256": "7b6bbfaad010c70d51cff5b33de10e5ca87311c17169f3307c40943837233ead"
+  },
+  "python": "3.13.14",
+  "packages": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.5",
+    "scipy": "1.18.0",
+    "scikit-learn": "1.9.0",
+    "joblib": "1.5.3",
+    "threadpoolctl": "3.6.0",
+    "python-dateutil": "2.9.0.post0",
+    "six": "1.17.0",
+    "tzdata": "2026.3",
+    "narwhals": "2.24.0"
+  },
+  "distribution": "Private versioned release artifact; not published by this task",
+  "trust": "This manifest must be supplied through an authenticated operator-controlled release channel; hashes alone are not authenticity"
+}

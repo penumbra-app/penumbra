@@ -39,13 +39,13 @@ def validate_ranker(ranker, features):
         raise ValueError("Week 7 artifact contains nonfinite parameters")
 
 
-def load_bundle(path=DEFAULT_BUNDLE, *, expected_sha256=None):
+def load_bundle(path=DEFAULT_BUNDLE, *, expected_sha256=None, resource_root=None):
     """Load only trusted local pickle/joblib artifacts. A digest checks integrity,
     not authenticity; obtain it from a separately trusted release manifest.
     Never expose this loader to user uploads or arbitrary remote paths.
     """
     if not Path(path).is_file():
-        raise FileNotFoundError(f"Missing Week 7 serving bundle: {path}; run src.scripts.prepare_week7_serving")
+        raise FileNotFoundError(f"Missing Week 7 serving bundle: {path}; restore the trusted frozen release artifact")
     if expected_sha256 is not None and file_digest(path) != expected_sha256:
         raise ValueError("Week 7 bundle checksum mismatch before deserialization")
     try:
@@ -59,6 +59,14 @@ def load_bundle(path=DEFAULT_BUNDLE, *, expected_sha256=None):
                 "selected_config_path", "selected_config_sha256"}
     if not required <= bundle.keys():
         raise ValueError(f"Incomplete Week 7 serving bundle: missing {sorted(required - bundle.keys())}")
+    if resource_root is not None:
+        # Historical bundles contain Windows separators; never change process cwd.
+        relative = Path(str(bundle["selected_config_path"]).replace("\\", "/"))
+        base = Path(resource_root).resolve()
+        resolved = (base / relative).resolve()
+        if relative.is_absolute() or not resolved.is_relative_to(base):
+            raise ValueError("Bundle configuration must stay within resource_root")
+        bundle = dict(bundle, selected_config_path=str(resolved))
     validate_ranker(bundle["ranker"], bundle["features"])
     if file_digest(bundle["selected_config_path"]) != bundle["selected_config_sha256"]:
         raise ValueError("Frozen Content preset changed since bundle creation")
