@@ -10,15 +10,26 @@ permissions:
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+
       - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.13'
           cache: pip
-          cache-dependency-path: requirements-experiments.txt
-      - run: python -m pip install -r requirements-experiments.txt
-      - run: python -m unittest discover -s tests -v
+          cache-dependency-path: |
+            requirements-experiments.txt
+            requirements-serving.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements-experiments.txt
+          python -m pip install -r requirements-serving.txt
+          python -m pip install pytest
+
+      - name: Run full test suite
+        run: python -m pytest -q

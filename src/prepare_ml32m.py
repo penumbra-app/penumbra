@@ -220,7 +220,11 @@ def prepare(zip_path, output, legacy_dir=Path("data"), development_users=1000,
             write_csv(stage / name / "ratings.csv", RATING_FIELDS,
                       (dict(zip(RATING_FIELDS, (r.user_id, r.movie_id, r.rating, r.timestamp)))
                        for rows in groups for r in rows))
-        files = {str(p.relative_to(stage)): file_sha(p) for p in sorted(stage.rglob("*")) if p.is_file()}
+        files = {
+            p.relative_to(stage).as_posix(): file_sha(p)
+            for p in sorted(stage.rglob("*"))
+            if p.is_file()
+        }
         manifest = {
             "schema_version": 1, "dataset": "MovieLens 32M", "zip_sha256": file_sha(zip_path),
             "official_checksums_verified": expected_md5 is None, "legacy_sha256": legacy_hashes,
