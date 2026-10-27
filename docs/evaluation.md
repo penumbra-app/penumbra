@@ -1,172 +1,670 @@
 # Evaluation
 
-## Content: Week 5 procedure
+## Purpose
 
-Run from the repository root:
+Penumbra uses offline evaluation to decide whether recommendation-system changes actually improve ranking quality on unseen user preferences.
 
-```powershell
-python -m src.scripts.evaluate_content --splits-output data/content-splits.csv
-```
+Evaluation is treated as a model-selection tool rather than only a reporting step.
 
-The report is [content-evaluation-results.json](content-evaluation-results.json).
-It records input SHA-256 hashes, split hash/counts, feature coverage, all candidate
-configurations, validation/test metrics, and the selected configuration. The
-optional CSV exports each `(userId, movieId, rating, timestamp, split)` assignment
-for teammates to reuse. This runner evaluates content only; it does not claim
-that collaborative or hybrid models have passed this protocol.
+A more complicated model is not kept merely because it is newer or more sophisticated. It must be supported by controlled evaluation.
 
-### Shared data split
+Week 5 expanded the evaluation system beyond pairwise accuracy.
 
-Use `src.evaluation.splits.build_user_evaluation_split`, which delegates to the
-existing hybrid `chronological_split`: each user's earliest 60% builds the
-profile, the next 20% is validation, and the final 20% is test (integer cutoffs).
-The shared helper calls its middle partition `train`, because hybrid uses it to
-train a reranker; content uses it for feature selection. Every content variant
-uses identical assignments. Profiles, baselines, recency reference times, and
-feature evidence are fitted on the first partition only. No test refit occurs.
-Test labels cannot affect validation selection.
+Week 6 used that framework to:
 
-The bundled snapshot contains 100,836 ratings, 610 users, and 9,742 catalog
-movies. It produces 60,255 training, 20,164 validation, and 20,417 test ratings.
-The runner rejects duplicate user/movie observations and missing timestamps
-before splitting. Missing catalog metadata is retained as an empty-feature movie,
-so difficult candidates are not silently dropped.
+- reproduce enriched Content
+- test content-confidence integration
+- reintroduce Personal into the Hybrid
+- run targeted linear feature ablations
+- test a nonlinear GBT reranker
+- reject GBT when it failed validation
 
-Timestamp ties follow the shared helper's existing pandas ordering, not a new
-content-specific split. Reuse the exported assignments for exact cross-model
-comparisons, especially across pandas versions. This is per-user chronology,
-not a single global cutoff; cross-user models need an explicitly agreed temporal
-protocol before making strict real-time claims.
+---
 
-### Metrics
+# Datasets
 
-| Metric | Definition |
-| --- | --- |
-| MAE | Mean absolute 0–5 rating error over held-out observations |
-| RMSE | Square root of mean squared rating error; primary validation selection criterion |
-| Pairwise accuracy (macro) | Per-user fraction of correctly ordered unequal-rating pairs, averaged over eligible users |
-| Pairwise accuracy (micro) | Correct pair credit divided by all eligible pairs |
-| NDCG@10 | Binary relevance: rating >= 4 is liked; discount `1/log2(rank+1)`; macro average over users with a liked candidate |
+Current evaluation uses MovieLens latest-small.
 
-Equal actual ratings do not create preference pairs. Predicted score ties receive
-0.5 pair credit. NDCG uses expected gain across each entire tied-score block,
-including ties crossing rank 10, so a constant baseline cannot benefit from lucky
-movie-ID ordering. Users with no unequal-rating pairs or no liked movies are
-excluded only from the corresponding ranking metric; counts are reported.
-They remain in rating-error metrics. The test report has 601 pairwise-eligible
-users, 941,183 pairs, and 591 NDCG-eligible users.
+Dataset size:
 
-Candidates are the movies rated in that held-out partition, not the full unseen
-catalog. NDCG therefore measures ordering within observed choices; it is not a
-measurement of full-catalog recommendation quality, exposure, or online lift.
+- Ratings: `100,836`
+- Users: `610`
+- Rated movies: `9,724`
+- Movie rows: `9,742`
 
-### Baselines, ablations, and retention
+MovieLens provides:
 
-Compare a personal-mean baseline, genres only, all implemented features (including
-cast weight 0.25), and six variants that each disable exactly one feature's weight.
-Profile shrinkage/recency settings stay fixed. Select the lowest validation RMSE;
-exact ties prefer fewer enabled features and then a stable variant name. Selection
-happens before scoring test data. Store the resulting `selected_config` with
-features lacking training evidence disabled. Test ablations are descriptive and
-must not be used for additional tuning.
+- user IDs
+- movie IDs
+- ratings
+- timestamps
+- titles
+- genres
 
-The original bundled CSV has genre metadata for 9,708 movies and release years for 9,729.
-Cast, director, runtime, and language coverage are all zero. Equal ablation scores
-for those features do not show they are useful or harmless. That run cannot
-validate those features; the subsequent IMDb run below evaluates them. Cast
-remains disabled in the library default, and is enabled by the enriched report.
-Future feature additions
-must improve the prespecified validation criterion before promotion. No new
-model family was introduced for Week 5.
+Week 6 also uses IMDb-derived enrichment for the Content model.
 
-## Recorded content results
+Generated enriched movie file:
 
-These values come from the committed JSON report, using the bundled CSV snapshot.
-The original run's chosen effective configuration enables genre weight 1.0 and release-era
-weight 0.25. Its report label is `without_cast`; other unavailable features are
-also disabled in `selected_config`.
+`data/movies-enriched.csv`
 
-| Configuration | Validation RMSE | Test MAE | Test RMSE | Test pairwise macro | Test NDCG@10 |
+Week 6 IMDb coverage:
+
+- Director: `9,717`
+- Runtime: `9,718`
+- Release era: `9,742`
+- Cast: `9,366`
+- Language: `0`
+- Unavailable movie IDs: `23`
+
+The selected standalone Content configuration is:
+
+`without_language`
+
+Its reproducibility report is:
+
+`docs/week6-content-repro.json`
+
+---
+
+# Data Splitting
+
+## Standard Final Evaluation Split
+
+The main evaluation uses a deterministic chronological split for each eligible user:
+
+- First 60%: profile / upstream models
+- Next 20%: reranker training
+- Final 20%: held-out evaluation
+
+Ratings are sorted by:
+
+1. timestamp
+2. movie ID as a deterministic tie-breaker
+
+The final 20% is excluded from:
+
+- user-profile construction
+- reranker training
+- upstream content evidence
+- upstream collaborative evidence
+
+For the Hybrid:
+
+- Content profiles use the user's first 60%.
+- Hybrid MF is trained from eligible users' first-60% profiles.
+- Population reference features exclude the target user's own ratings where required.
+- Final evaluation labels remain outside the permitted feature boundary.
+
+---
+
+## Week 6 GBT Validation Split
+
+GBT model selection uses a separate validation structure:
+
+- First 60%: profile / upstream models
+- Next 10%: GBT and validation-logistic training
+- Next 10%: validation
+- Final 20%: untouched final test
+
+This was introduced so GBT architecture and feature decisions would not be selected using the final test set.
+
+The final 20% was not used for GBT because every tested GBT variant failed to beat the validation logistic baseline.
+
+---
+
+# Metrics
+
+## Macro Pairwise Accuracy
+
+For every user, held-out movies with different ratings are converted into preference pairs.
+
+A model receives:
+
+- `1.0` if it orders the pair correctly
+- `0.0` if it orders the pair incorrectly
+- `0.5` if it predicts a tie
+
+Each user's accuracy is calculated independently and then averaged.
+
+Every user therefore receives equal weight.
+
+Higher is better.
+
+---
+
+## Pair-Weighted Accuracy
+
+Correct pairwise decisions are aggregated across all evaluated pairs.
+
+Users who contribute more valid preference pairs therefore have more influence.
+
+Higher is better.
+
+Macro and pair-weighted accuracy are both retained because they answer different questions.
+
+---
+
+## NDCG@10
+
+NDCG@10 measures whether highly relevant movies appear near the top of the ranked held-out set.
+
+Higher is better.
+
+`1.0` represents the ideal ordering of the evaluated candidates.
+
+Absolute NDCG values should only be compared when models are evaluated on the same candidate split.
+
+For example, Week 6 GBT validation NDCG values around `0.93` should not be directly compared with final-20% NDCG values around `0.90`, because the candidate sets differ in size and chronology.
+
+---
+
+## MAE
+
+Mean Absolute Error measures average absolute rating-prediction error.
+
+Lower is better.
+
+MAE is reported only for rating-like models.
+
+---
+
+## RMSE
+
+Root Mean Squared Error measures rating-prediction error with greater penalty for large mistakes.
+
+Lower is better.
+
+Ranking-only logistic rerankers do not produce calibrated rating predictions, so MAE and RMSE are not reported for them.
+
+---
+
+# Baselines and Compared Models
+
+## Movie-Average Baseline
+
+A simple population movie-rating baseline.
+
+---
+
+## Heuristic Recommender
+
+Combines personal genre preference and Bayesian-adjusted movie quality.
+
+---
+
+## Original ML Reranker
+
+Pairwise logistic regression using:
+
+- Personal
+- Quality
+- Popularity
+
+This remains an important historical benchmark.
+
+---
+
+## Matrix Factorization
+
+Biased MF using:
+
+- global rating behavior
+- user bias
+- movie bias
+- latent user factors
+- latent movie factors
+
+Selected MF configuration:
+
+- factors: `20`
+- learning rate: `0.005`
+- regularization: `0.02`
+- epochs: `40`
+- prior strength: `5.0`
+- random seed: `42`
+- `shrink_latent=True`
+
+---
+
+## Content
+
+Standalone metadata-based user preference model.
+
+Week 6 uses IMDb-enriched movie metadata and the selected `without_language` configuration.
+
+---
+
+## Hybrid V1
+
+Historical four-feature logistic hybrid:
+
+- Content
+- MF
+- Quality
+- Popularity
+
+---
+
+## Week 6 Five-Signal Hybrid
+
+Pairwise logistic regression using:
+
+- MF
+- Personal
+- Content
+- Quality
+- Popularity
+
+This is the strongest tested Week 6 Hybrid across the combined metric profile.
+
+---
+
+## Week 6 GBT
+
+Pointwise `GradientBoostingRegressor` using a subset of:
+
+- MF
+- Personal
+- Content
+- Content Confidence
+- Quality
+- Popularity
+
+GBT was evaluated only on the dedicated validation slice because it failed validation.
+
+---
+
+# Evaluation Procedure
+
+For standard final evaluation:
+
+1. Chronologically split each eligible user's ratings.
+2. Build user profiles and upstream models only from permitted information.
+3. Generate predictions for held-out movies.
+4. Convert differently rated held-out movies into preference pairs.
+5. Calculate macro pairwise accuracy.
+6. Calculate pair-weighted accuracy.
+7. Rank held-out candidates and calculate NDCG@10.
+8. Calculate MAE/RMSE for rating-like models.
+9. Aggregate per-user results.
+
+For Week 6 GBT validation:
+
+1. Keep the first 60% as the profile.
+2. Split the middle 20% into development-train and validation halves.
+3. Train GBT and its logistic comparator only on the first 10%.
+4. Evaluate both on the same second 10%.
+5. Keep the final 20% untouched unless a GBT configuration earns promotion.
+
+---
+
+# Current Results
+
+## Week 6 Linear Hybrid Ablations
+
+These are the main final-20% Week 6 Hybrid results.
+
+Users evaluated: `600`
+
+Test pairs: `633,032`
+
+| Configuration | Macro | Pair-Weighted | NDCG@10 |
+| --- | ---: | ---: | ---: |
+| **MF + Personal + Content + Quality + Popularity** | **63.645%** | **68.648%** | **0.9080** |
+| MF + Personal + Content + Popularity | 63.445% | 68.556% | **0.9080** |
+| MF + Content + Quality + Popularity | 63.419% | 68.503% | 0.9066 |
+| MF + Content + Popularity | 63.307% | 68.423% | 0.9061 |
+| Personal + Content + Quality + Popularity | 63.293% | 68.529% | 0.9070 |
+| Content + Quality + Popularity | 63.253% | 68.401% | 0.9064 |
+
+The best Week 6 Hybrid is therefore:
+
+`MF + Personal + Content + Quality + Popularity`
+
+---
+
+## Week 6 Hybrid vs Original ML
+
+| Model | Macro | Pair-Weighted | NDCG@10 |
+| --- | ---: | ---: | ---: |
+| Original ML | **63.876%** | 68.516% | 0.9051 |
+| Week 6 five-signal Hybrid | 63.645% | **68.648%** | **0.9080** |
+
+Differences:
+
+- Macro: `-0.231 pp`
+- Pair-weighted: `+0.132 pp`
+- NDCG@10: `+0.0029`
+
+There is no strict winner across all three metrics.
+
+The original ML model retains the best macro accuracy.
+
+The Week 6 Hybrid achieves better pair-weighted accuracy and NDCG@10.
+
+The project goal is not specifically to beat the original ML benchmark; the goal is to maximize the overall ranking metric profile while keeping changes supported by evaluation.
+
+---
+
+## Week 6 Linear Content-Confidence Experiment
+
+A linear Hybrid with raw Content Confidence was tested before the final ablation study.
+
+Features:
+
+- Content
+- Content Confidence
+- MF
+- Quality
+- Popularity
+
+Results:
+
+- Macro: `63.547%`
+- Pair-weighted: `68.056%`
+- NDCG@10: `0.9069`
+
+The confidence coefficient was very small.
+
+This experiment was rejected because raw confidence did not provide a clean overall improvement.
+
+The result does not prove that confidence itself is useless. It shows that an independent linear confidence feature is not equivalent to learning a confidence-content interaction.
+
+---
+
+# Week 6 GBT Validation
+
+## Motivation
+
+GBT was tested as a nonlinear alternative to logistic regression.
+
+The main hypothesis was that trees could learn interactions such as:
+
+`content matters more when content confidence is high`
+
+The tested GBT was pointwise rather than pairwise.
+
+It predicted actual user rating from candidate features and then used the predicted score for ranking.
+
+---
+
+## Validation Logistic Baseline
+
+For a fair comparison, the logistic comparator was retrained on exactly the same development-training slice used by the GBT.
+
+Validation set:
+
+- Users evaluated: `571`
+- Preference pairs: `167,009`
+
+Validation Logistic:
+
+- Macro: `64.460%`
+- Pair-weighted: `68.547%`
+- NDCG@10: `0.9327`
+
+---
+
+## GBT Ablation Results
+
+| Model | Macro | Pair-Weighted | NDCG@10 |
+| --- | ---: | ---: | ---: |
+| **Validation Logistic** | **64.460%** | **68.547%** | **0.9327** |
+| Full GBT | 63.506% | 67.818% | 0.9314 |
+| GBT - Confidence | 63.654% | 67.831% | 0.9312 |
+| GBT - Quality | 63.238% | 67.773% | 0.9307 |
+| GBT - Popularity | 64.155% | 67.603% | 0.9320 |
+| GBT - Content | 63.572% | 67.610% | 0.9305 |
+
+Every GBT variant lost to Logistic on all three validation metrics.
+
+---
+
+## GBT Deltas vs Logistic
+
+| Model | Macro Delta | Pair-Weighted Delta | NDCG@10 Delta |
+| --- | ---: | ---: | ---: |
+| Full GBT | -0.954 pp | -0.729 pp | -0.0014 |
+| GBT - Confidence | -0.806 pp | -0.716 pp | -0.0015 |
+| GBT - Quality | -1.222 pp | -0.774 pp | -0.0021 |
+| GBT - Popularity | -0.306 pp | -0.944 pp | -0.0007 |
+| GBT - Content | -0.888 pp | -0.937 pp | -0.0022 |
+
+The best GBT by macro and NDCG@10 was `GBT - Popularity`.
+
+The best GBT by pair-weighted accuracy was `GBT - Confidence`.
+
+Neither was competitive enough to replace Logistic.
+
+---
+
+# Interpretation
+
+## Personal Is Complementary
+
+Week 5 diagnostics showed that Personal was weaker standalone but often corrected mistakes made by MF and Quality.
+
+Week 6 confirmed that bringing Personal back into the enriched Hybrid improves the metric profile.
+
+The five-signal model outperformed the otherwise comparable four-feature IMDb baseline.
+
+---
+
+## MF and Quality Are Redundant but Both Still Help
+
+Week 5 showed that MF and Quality agree on roughly `92.1%` of pairwise decisions.
+
+Their learned coefficients also compete with one another.
+
+However, Week 6 ablations showed that removing either one from the strongest five-signal model reduced performance.
+
+The correct conclusion is therefore not that one should automatically be removed.
+
+Instead:
+
+- they are highly redundant
+- but both still contribute enough to justify retention in the tested logistic Hybrid
+
+---
+
+## Content Is Useful but Its Marginal Linear Contribution Was Not Fully Isolated
+
+Week 6 retained enriched Content in the strongest Hybrid.
+
+However, no otherwise-identical linear `no_content` ablation was run.
+
+Therefore the marginal contribution of Content inside the final five-signal logistic model was not isolated directly.
+
+GBT did include a `no_content` ablation, but GBT itself uses a different learning objective and cannot substitute for that missing linear ablation.
+
+---
+
+## Content Confidence Did Not Earn Promotion
+
+Content confidence showed useful diagnostic behavior in Week 5.
+
+However:
+
+- raw linear confidence did not improve the Hybrid cleanly
+- removing confidence from GBT slightly improved macro and pair-weighted performance relative to Full GBT
+- all GBT variants still lost to Logistic
+
+Confidence remains available for future research but is not part of the selected logistic Hybrid.
+
+---
+
+## Pairwise Logistic Beat Pointwise GBT
+
+The main Week 6 nonlinear experiment failed.
+
+A likely structural reason is objective alignment:
+
+- Logistic is trained directly on pairwise preference ordering.
+- GBT was trained to predict numeric ratings pointwise.
+- Penumbra's primary ranking metrics evaluate relative ordering and Top-K ranking.
+
+The simpler linear model therefore had a training objective more directly aligned with the evaluation task.
+
+This result supports keeping pairwise logistic regression rather than adopting a more complex model without evidence.
+
+---
+
+# Week 5 Primary Evaluation
+
+Week 5 remains the main baseline diagnostic benchmark that motivated Week 6.
+
+Users evaluated: `600`
+
+Held-out preference pairs: `633,032`
+
+| Model | Pairwise | Pair-Weighted | NDCG@10 | MAE | RMSE |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| User mean | 0.959111 | 0.766893 | 0.991444 | 0.500000 | 0.671557 |
-| Genres only / remove era | 0.947235 | 0.754816 | 0.979537 | 0.544824 | 0.713490 |
-| Genres + era (selected) | 0.940812 | 0.750897 | 0.975247 | 0.550698 | 0.728973 |
-| Remove genre (era only on this data) | 0.952581 | 0.762782 | 0.987046 | 0.510226 | 0.697419 |
+| Movie-average baseline | 62.608% | 67.333% | 0.9002 | 0.7891 | 0.9395 |
+| Heuristic | 60.633% | 65.130% | 0.8986 | 0.7587 | 0.9220 |
+| **Original ML** | **63.876%** | **68.516%** | **0.9051** | — | — |
+| Matrix Factorization | 62.634% | 67.265% | 0.8988 | **0.7143** | **0.8685** |
+| Content | 55.622% | 59.679% | 0.8850 | 0.7806 | 0.9441 |
+| Hybrid V1 | 63.287% | 67.872% | 0.9050 | — | — |
 
-The selected configuration's test pairwise micro accuracy is 0.599850. It improves
-RMSE by about 1.63% relative to the personal mean on this snapshot. These are
-point estimates, not significance tests or evidence that more metadata will help.
-The data contains no cold users in this split; cold-start behavior is verified
-with deterministic tests, not an empirical cold-start accuracy claim.
+Week 5 diagnostics established:
 
-## IMDb-enriched results (September 28, 2026)
+- MF and Quality are highly redundant.
+- Personal provides strong complementary information.
+- Content is confidence-sensitive.
+- More signals do not automatically produce a better Hybrid.
 
-[content-enriched-evaluation-results.json](content-enriched-evaluation-results.json)
-records the completed run on `data/movies-enriched.csv`. It uses exactly the same
-rating split as the original run, verified by matching split SHA-256 hashes.
-[content-imdb-import.json](content-imdb-import.json) records source/archive hashes
-and the 23 unmatched IMDb title IDs. See [metadata coverage](metadata-sources.md#completed-local-imdb-import).
+Those findings directly motivated the Week 6 experiments.
 
-Validation selected `without_language`: genre weight 1.0, director 0.5, runtime
-0.25, release era 0.25, cast 0.25, and language 0. The full configuration ties
-because this dataset supplies no original-language values. All other feature
-removals worsen validation RMSE.
+---
 
-| Configuration | Validation RMSE | Test MAE | Test RMSE | Test pairwise macro | Test NDCG@10 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| User mean | 0.959111 | 0.766893 | 0.991444 | 0.500000 | 0.671557 |
-| Genres only | 0.947238 | 0.754811 | 0.979551 | 0.544748 | 0.713665 |
-| Selected / full | 0.931784 | 0.742606 | 0.966774 | 0.567768 | 0.751358 |
-| Remove genre | 0.942967 | 0.754046 | 0.978021 | 0.544557 | 0.735940 |
-| Remove director | 0.937148 | 0.747603 | 0.971614 | 0.564328 | 0.746843 |
-| Remove runtime | 0.935122 | 0.745697 | 0.970218 | 0.556000 | 0.740320 |
-| Remove release era | 0.938063 | 0.746400 | 0.970892 | 0.563346 | 0.742888 |
-| Remove cast | 0.931982 | 0.742759 | 0.966932 | 0.568177 | 0.751831 |
+# Superseded Week 6 One-Off Evaluations
 
-The selected model's pairwise micro accuracy is 0.621958. Its test RMSE improves
-from the original model's 0.975247 to 0.966774, and NDCG@10 from 0.728973 to
-0.751358. This comparison includes IMDb year/genre updates as well as added
-director, runtime, and cast features; it does not isolate metadata enrichment's
-individual effects. The table's feature removals do hold the enriched snapshot
-fixed.
+Some early Week 6 one-off Hybrid runs used an evaluation-time MF configuration that did not exactly match the selected MF configuration used during training.
 
-Cast improves validation RMSE by only 0.000198 and test RMSE by 0.000158. Its
-test pairwise accuracy and NDCG are slightly worse than the no-cast variant.
-It is retained under the prespecified validation-RMSE criterion, not claimed as
-a significant or universal ranking improvement. Language remains unvalidated.
+The mismatch involved the selected 40-epoch `shrink_latent=True` configuration.
 
-## Reproduce the enriched run
+Those one-off Hybrid numbers are superseded by the corrected Week 6 linear-ablation benchmark documented above.
 
-After following [metadata access](metadata-sources.md):
+The corrected benchmark uses a matching MF configuration during training and evaluation.
 
-```powershell
-python -m src.scripts.enrich_content --imdb-directory data
-python -m src.scripts.evaluate_content --movies data/movies-enriched.csv --output docs/content-enriched-evaluation-results.json --splits-output data/content-splits.csv
-python -m src.content.demo --movies data/movies-enriched.csv --evaluation-report docs/content-enriched-evaluation-results.json --user-id 1 --count 10
-```
+---
 
-Keep the same ratings and split assignments. Record metadata snapshot hashes and
-coverage. Current IMDb/TMDB aggregates, popularity, revenue, awards, and reviews
-can postdate historical ratings; do not insert them into historical profiles as
-though available at the prediction time. The current model excludes these fields.
-Present-day metadata corrections still limit strict historical reconstruction.
+# Current Model-Selection Decision
 
-MovieLens latest-small is a development dataset; GroupLens discourages treating
-its changing latest releases as a permanent research benchmark. The committed
-input hashes fix this project's snapshot. For publication, agree on a fixed
-benchmark and protocol before comparing models. See the
-[official dataset description](https://files.grouplens.org/datasets/movielens/ml-latest-small-README.html).
+For Hybrid / Reranking:
 
-## Verification and relevant files
+**Keep pairwise logistic regression. Reject the tested pointwise GBT family.**
 
-`python -m pytest -q` covers exact arithmetic, cast evidence budgets/caps, sparse
-metadata, cold users, reason attribution, ingestion joins, API retry behavior,
-ranking tie treatment, shared split identity, and test-label isolation.
+Selected Week 6 Hybrid candidate:
 
-- `src/evaluation/content.py`: content metrics, ablations, and evaluation.
-- `src/scripts/evaluate_content.py`: CLI and reproducible report output.
-- `src/evaluation/splits.py`: shared split entry point.
-- `tests/evaluation/test_content.py`: metric and leakage regressions.
-- `docs/content-evaluation-results.json`: recorded run and selected configuration.
-- `docs/content-enriched-evaluation-results.json`: IMDb-enriched metrics and configuration.
-- `docs/content-imdb-import.json`: source and output hashes for the local import.
+`MF + Personal + Content + Quality + Popularity`
+
+Final held-out Hybrid metrics:
+
+- Macro: `63.645%`
+- Pair-weighted: `68.648%`
+- NDCG@10: `0.9080`
+
+GBT was rejected on validation and was not evaluated on the final 20%.
+
+---
+
+# Known Limitations
+
+- MovieLens latest-small is much smaller than a production recommendation dataset.
+- Offline explicit ratings do not perfectly represent real-world watch behavior or satisfaction.
+- NDCG@10 is calculated over available held-out candidates rather than a production-scale catalog.
+- The final five-signal logistic Hybrid did not receive a matched linear `no_content` ablation.
+- Confidence signals remain incompletely exploited by the selected linear model.
+- The tested GBT used pointwise rating regression rather than a ranking-specific tree objective.
+- Final model quality is multi-objective: macro, pair-weighted accuracy, and NDCG@10 can disagree.
+- Diversity requires its own evaluation because the primary model comparisons focus on relevance ranking.
+- IMDb enrichment remains incomplete for some fields, especially language.
+- Offline MovieLens results should not be treated as directly comparable to private production recommender metrics.
+
+---
+
+# Relevant Files
+
+## Core Evaluation
+
+- `src/evaluation/metrics.py`
+- `src/evaluation/ranking.py`
+- `src/evaluation/reports.py`
+- `src/evaluation/splits.py`
+
+## Primary Evaluation
+
+- `src/scripts/evaluate_ranking.py`
+
+## Historical Ablations
+
+- `src/scripts/week3_ablations.py`
+- `src/scripts/evaluate_week3_ablations.py`
+
+## Week 5 Diagnostics
+
+- `src/scripts/evaluate_signal_usefulness.py`
+- `src/scripts/retest_old_ml.py`
+- `src/scripts/analyze_week5_errors.py`
+
+## Week 6 Linear Evaluation
+
+- `src/scripts/week6_ablations.py`
+- `src/scripts/evaluate_week6_ablations.py`
+
+## Week 6 GBT
+
+- `src/hybrid/gbt_reranker.py`
+- `src/scripts/train_week6_gbt.py`
+- `src/scripts/evaluate_week6_gbt.py`
+- `src/scripts/week6_gbt_ablations.py`
+- `src/scripts/evaluate_week6_gbt_ablations.py`
+
+## Week 6 Reports
+
+- `docs/week6-content-repro.json`
+- `docs/week6-ablation-results.json`
+- `docs/week6-gbt-ablation-results.json`
+
+## Models
+
+- `src/models/ml_reranker.joblib`
+- `src/models/hybrid_v1_reranker.joblib`
+- `src/models/ablations/`
+- `src/models/week6_ablations/`
+- `src/models/week6_gbt_ablations/`
+
+The Week 6 GBT models are validation artifacts, not selected final rerankers.
+
+---
+
+# Week 6 Evaluation Conclusion
+
+Week 6 successfully tested both richer inputs and a more expressive nonlinear reranker.
+
+The final evidence supports three conclusions:
+
+1. The enriched five-signal pairwise logistic Hybrid is the strongest tested Hybrid across the combined final-test metric profile.
+2. The tested pointwise GBT family does not improve ranking quality and should not replace Logistic.
+3. Model complexity is not itself an improvement; the chosen model must remain tied to measured ranking performance.
+
+Week 7 can therefore proceed using the pairwise logistic Hybrid as the advanced single-user reranking foundation while work shifts toward group recommendation and production hardening.
+
+---
+
+## Collaborative: Week 5 Procedure
+
+The Collaborative benchmark uses the shared chronological evaluation split and ranking metrics.
+
+Run:
+
+`python -m src.collaborative.evaluation.benchmark`
+
+The benchmark fits upstream models using permitted training data, evaluates on held-out observations, and exports per-user metrics and aggregate results.
+
+See:
+- `src/collaborative/README.md`
+- `src/collaborative/artifacts/benchmark/results.json`
+
+EASE and pairwise-factorization experiments are evaluated separately and must not be treated as automatic replacements for the selected MF model.

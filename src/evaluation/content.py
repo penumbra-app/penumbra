@@ -1,4 +1,4 @@
-"""Held-out content evaluation using the team's existing 60/20/20 split."""
+﻿"""Held-out content evaluation using the team's existing 60/20/20 split."""
 from __future__ import annotations
 
 import hashlib
@@ -13,6 +13,7 @@ from src.content.features import FEATURE_TYPES, feature_values
 from src.content.schemas import MovieMetadata
 from src.data_processing.movielens import movie_metadata_from_records, user_ratings_from_records
 from src.evaluation.splits import build_user_evaluation_split
+from src.evaluation.metrics import ranking_metrics
 
 KINDS = ("genre",) + FEATURE_TYPES
 
@@ -28,38 +29,6 @@ def ablation_configs() -> dict[str, ScoringConfig]:
     configs.update({f"without_{kind}": replace(full, **{f"{kind}_weight": 0})
                     for kind in KINDS})
     return configs
-
-
-def ranking_metrics(actual, predicted, k: int = 10, like_threshold: float = 4.0) -> dict:
-    """Binary NDCG with expected gain for score ties; pairwise ties get half credit."""
-    actual, predicted = np.asarray(actual, dtype=float), np.asarray(predicted, dtype=float)
-    if (actual.ndim != 1 or actual.shape != predicted.shape or not len(actual)
-            or not np.isfinite(actual).all() or not np.isfinite(predicted).all()):
-        raise ValueError("actual and predicted must be nonempty, finite, matching vectors")
-    if isinstance(k, bool) or not isinstance(k, int) or k <= 0:
-        raise ValueError("k must be a positive integer")
-    if not math.isfinite(like_threshold) or not 0 <= like_threshold <= 5:
-        raise ValueError("like_threshold must be in [0, 5]")
-    actual_diffs = actual[:, None] - actual
-    score_diffs = predicted[:, None] - predicted
-    mask = np.triu(actual_diffs != 0, k=1)
-    pairs = int(mask.sum())
-    correct = float(((np.sign(actual_diffs[mask]) == np.sign(score_diffs[mask])).sum()
-                     + 0.5 * (score_diffs[mask] == 0).sum()))
-    order = np.argsort(-predicted, kind="stable")
-    gains = (actual[order] >= like_threshold).astype(float)
-    ordered_scores = predicted[order]
-    # Average gain within entire tied blocks, including blocks crossing rank k.
-    boundaries = np.r_[0, np.flatnonzero(np.diff(ordered_scores)) + 1, len(gains)]
-    expected = gains.copy()
-    for start, end in zip(boundaries[:-1], boundaries[1:]):
-        expected[start:end] = gains[start:end].mean()
-    discounts = 1 / np.log2(np.arange(min(k, len(actual))) + 2)
-    ideal = float(discounts[:min(int(gains.sum()), k)].sum())
-    ndcg = float(np.dot(expected[:k], discounts) / ideal) if ideal else None
-    return {"pairwise_accuracy": correct / pairs if pairs else None,
-            "pairs": pairs, "pairwise_credit": correct, f"ndcg_at_{k}": ndcg}
-
 
 def evaluate_content(ratings: pd.DataFrame, movie_records: pd.DataFrame,
                      profile_config: ProfileConfig | None = None) -> tuple[dict, pd.DataFrame]:
@@ -99,7 +68,7 @@ def evaluate_content(ratings: pd.DataFrame, movie_records: pd.DataFrame,
         raise ValueError("not enough data for nonempty validation and test partitions")
     model = ContentModel(training, movies_by_id.values(), profile_config=active_profile)
     coverage = {kind: sum(bool(m.genres) if kind == "genre" else bool(
-        feature_values(m, kind, active_profile.max_cast_members)) for m in movies)
+        feature_values(m, kind)) for m in movies)
         for kind in KINDS}
     # A feature with no training evidence cannot be promoted by an identical score.
     learned_kinds = set()
