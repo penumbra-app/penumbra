@@ -114,3 +114,12 @@ separate measured evidence from deployment limits. Serving dependencies are pinn
 in requirements-serving.txt; the artifact manifest is docs/week9-artifact-manifest.json.
 The legacy default CLI remains supported; `python main.py --week7` explicitly selects
 the frozen Hybrid. Do not regenerate/train the frozen release to resolve missing files.
+
+## Integrated Content updates
+
+The Content branch now supplies selected TF-IDF profiles, optional text experiments,
+metadata enrichment, cold-start handling and deterministic unseen recommendations.
+See [Content usage](src/content/README.md), [evaluation setup](docs/evaluation-environment.md),
+and [private-data handoff](docs/hybrid-handoff.md). Content/Collaborative algorithms
+remain owned by their respective teammates; frozen Hybrid serving is maintained
+on the hybrid-group-reranking branch.
