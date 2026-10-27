@@ -182,3 +182,13 @@ Runs the current ML-powered recommendation pipeline for a selected MovieLens use
 Penumbra's goal is to move beyond generic movie popularity and produce recommendations that reflect each user's individual taste.
 
 The current system establishes the first reproducible baseline for measuring that goal. Future model changes will be evaluated against frozen benchmarks rather than judged only by whether individual recommendations appear reasonable.
+
+
+## Integrated Content updates
+
+The Content branch now supplies selected TF-IDF profiles, optional text experiments,
+metadata enrichment, cold-start handling and deterministic unseen recommendations.
+See [Content usage](src/content/README.md), [evaluation setup](docs/evaluation-environment.md),
+and [private-data handoff](docs/hybrid-handoff.md). Content/Collaborative algorithms
+remain owned by their respective teammates; frozen Hybrid serving is maintained
+on the hybrid-group-reranking branch.

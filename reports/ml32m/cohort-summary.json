@@ -1,0 +1,36 @@
+{
+  "dataset": "MovieLens 32M",
+  "zip_sha256": "e4a68655d7386b8f95f2f2424b2ff975dfdd15ffd59e0d864a14dca43e99d6ee",
+  "official_checksums_verified": true,
+  "legacy_max_timestamp": 1537799250,
+  "seed": 42,
+  "counts": {
+    "source_ratings": 32000204,
+    "source_users": 200948,
+    "excluded_recorded_activity_before_legacy_end": 169740,
+    "eligible_reserved": 14697,
+    "eligible_development": 14533,
+    "excluded_exact_event_overlap": 600,
+    "excluded_fewer_than_20_catalog_ratings": 1322,
+    "excluded_timestamp_split": 56
+  },
+  "catalog_movies": 9448,
+  "movies_with_plot": 9364,
+  "cohorts": {
+    "development": {
+      "users": 1000,
+      "ratings": 158366
+    },
+    "reserved": {
+      "users": 1000,
+      "ratings": 163010
+    }
+  },
+  "selection": "SHA256 ml32m-v1:seed:userId; byte0 parity partitions; lowest remaining-byte hashes sampled",
+  "eligibility": "first recorded source activity after legacy end; no matching old movie/rating/time event; >=20 restricted-catalog ratings; >=5 chronological history and >=2 outcome ratings",
+  "split": "first approximately 80% history, final 20% outcomes; timestamp groups intact",
+  "catalog": "fixed intersection with existing metadata via unambiguous TMDB/IMDb identities",
+  "availability": "earliest interaction in the entire 32M source, used only as an availability proxy",
+  "metadata": "retrospective TMDB snapshot; MovieLens community tags intentionally omitted",
+  "limitations": "reserved offline cohort, not prospective or causal evidence; event screening and newer recorded activity do not prove cross-release person identity disjointness"
+}

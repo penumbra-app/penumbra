@@ -2,12 +2,14 @@ from pathlib import Path
 
 import pandas as pd
 
-def load_movielens(data_directory: str | Path,) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_movielens(
+    data_directory: str | Path, movies_file: str | Path | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     
     directory = Path(data_directory)
 
     ratings_path = directory / "ratings.csv"
-    movies_path = directory / "movies.csv"
+    movies_path = Path(movies_file) if movies_file is not None else directory / "movies.csv"
 
     if not ratings_path.exists():
         raise FileNotFoundError(f"Missing file: {ratings_path}")

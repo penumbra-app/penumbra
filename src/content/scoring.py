@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from src.content.genres import _unique_genres
 from src.content.features import FEATURE_TYPES, feature_values
@@ -11,6 +12,9 @@ from src.content.schemas import (
     FeatureDebug, MovieMetadata, PredictionDebug, PredictionResult, ReasonSignal,
 )
 
+if TYPE_CHECKING:
+    from src.content.text import TextProfile, TextSignal
+
 
 @dataclass(frozen=True)
 class ScoringConfig:
@@ -18,6 +22,8 @@ class ScoringConfig:
     max_abs_genre_component: float = 1.0
     confidence_prior_count: float = 5.0
 
+    cast_weight: float = 0.25
+    max_abs_cast_component: float = 0.25
     director_weight: float = 0.5
     runtime_weight: float = 0.25
     release_era_weight: float = 0.25
@@ -26,9 +32,6 @@ class ScoringConfig:
     max_abs_runtime_component: float = 0.25
     max_abs_release_era_component: float = 0.25
     max_abs_language_component: float = 0.25
-    # Enable after validation on enriched data; bundled MovieLens has no cast.
-    cast_weight: float = 0.0
-    max_abs_cast_component: float = 0.25
 
     def __post_init__(self) -> None:
         for name, value in vars(self).items():
@@ -118,11 +121,35 @@ def genre_component(
     )
 
 
+def _supported_reasons(
+    kind: str, matches: list[tuple[str, float, float]],
+    value_count: int, raw: float, adjustment: float,
+) -> tuple[ReasonSignal, ...]:
+    """Allocate the actual feature adjustment after averaging, caps and weight.
+
+    Contributions explain the score before the final 0–5 clamp. A feature
+    whose preferences cancel or whose weight is disabled emits no reasons.
+    """
+    if not value_count or raw == 0 or adjustment == 0:
+        return ()
+    # Allocate the net adjustment over supporting values in its direction.
+    # Opposing values already reduce raw; this keeps attributions bounded even
+    # when nearly cancelling preferences meet an extreme configured weight.
+    supporting = [(v, p, e) for v, p, e in matches if p * raw > 0 and e > 0]
+    total = sum(abs(p) for _, p, _ in supporting)
+    return tuple(
+        ReasonSignal(kind, value, contribution / 5.0, evidence, contribution)
+        for value, preference, evidence in supporting
+        for contribution in (adjustment * abs(preference) / total,)
+    )
+
+
 def predict_one(
     profile: UserTasteProfile,
     movie: MovieMetadata,
     config: ScoringConfig | None = None,
     include_debug: bool = False,
+    *, text_signal: TextSignal | None = None,
 ) -> PredictionResult:
     active_config = config or ScoringConfig()
     component = genre_component(
@@ -150,17 +177,10 @@ def predict_one(
         active_config.genre_weight > 0
         and active_config.max_abs_genre_component > 0
     )
-    reasons = tuple(
-        ReasonSignal(
-            feature_type="genre",
-            feature_value=match.genre,
-            strength=max(-1.0, min(1.0, match.preference / 5.0)),
-            evidence_count=match.effective_evidence_count,
-            score_contribution=(match.preference / len(movie_genres)
-                                * (weighted_adjustment / component.raw_contribution)),
-        )
-        for match in component.matches
-        if enabled and match.preference != 0 and weighted_adjustment != 0
+    reasons = _supported_reasons(
+        "genre", [(m.genre, m.preference, m.effective_evidence_count)
+                  for m in component.matches],
+        len(movie_genres), component.raw_contribution, weighted_adjustment,
     )
     feature_debug: list[FeatureDebug] = []
     supports = [genre_support] if enabled and movie_genres else []
@@ -170,7 +190,7 @@ def predict_one(
         (p.feature_type, p.feature_value): p for p in profile.feature_preferences
     }
     for kind in FEATURE_TYPES:
-        values = feature_values(movie, kind, profile.config.max_cast_members)
+        values = feature_values(movie, kind)
         matches = [preference_map[(kind, value)] for value in values
                    if (kind, value) in preference_map]
         raw = sum(p.preference for p in matches) / len(values) if values else 0.0
@@ -183,13 +203,10 @@ def predict_one(
         if weight > 0 and bound > 0:
             if values:
                 supports.append(support)
-            extra_reasons.extend(
-                ReasonSignal(kind, p.feature_value,
-                             max(-1.0, min(1.0, p.preference / 5.0)),
-                             p.effective_evidence_count,
-                             p.preference / len(values) * (adjustment / raw))
-                for p in matches if p.preference != 0 and adjustment != 0
-            )
+            extra_reasons.extend(_supported_reasons(
+                kind, [(p.feature_value, p.preference, p.effective_evidence_count)
+                       for p in matches], len(values), raw, adjustment,
+            ))
         adjustments.append(adjustment)
         feature_debug.append(FeatureDebug(
             kind, values, tuple(p.feature_value for p in matches), raw,
@@ -199,17 +216,25 @@ def predict_one(
     confidence = (profile.rating_count / (profile.rating_count + prior)
                   * sum(supports) / len(supports)) if supports else 0.0
     reasons += tuple(extra_reasons)
+    if text_signal is not None and text_signal.evidence > 0:
+        adjustments.append(text_signal.adjustment)
+        text_support = text_signal.evidence / (text_signal.evidence + prior)
+        # Max support avoids summing overlapping metadata evidence. This is
+        # evidence strength, not a calibrated accuracy probability.
+        confidence = max(confidence, profile.rating_count / (profile.rating_count + prior)
+                         * text_support)
+        if text_signal.adjustment:
+            reasons += (ReasonSignal(
+                "text", f"{text_signal.representation.upper()} similarity to rated movie text",
+                text_signal.adjustment / 5, text_signal.evidence, text_signal.adjustment,
+            ),)
+        feature_debug.append(FeatureDebug(
+            "text", (text_signal.representation,), ("rated movie text",),
+            text_signal.raw_component, text_signal.adjustment, text_signal.weight,
+            text_signal.adjustment, text_support,
+        ))
     unclamped_score = profile.baseline + sum(adjustments)
     predicted_score = max(0.0, min(5.0, unclamped_score))
-    fallback_reason = None
-    if profile.rating_count == 0:
-        fallback_reason = "cold_start_user"
-    elif not movie_genres and not any(d.candidate_values for d in feature_debug):
-        fallback_reason = "missing_metadata"
-    elif not supports:
-        fallback_reason = "no_enabled_features"
-    elif not any(supports):
-        fallback_reason = "no_matching_evidence"
     debug = None
 
     if include_debug:
@@ -239,7 +264,6 @@ def predict_one(
         confidence=float(confidence),
         reason_signals=reasons,
         debug=debug,
-        fallback_reason=fallback_reason,
     )
 
 
@@ -248,6 +272,13 @@ def predict_batch(
     movies: Iterable[MovieMetadata],
     config: ScoringConfig | None = None,
     include_debug: bool = False,
+    *, text_profile: TextProfile | None = None,
 ) -> tuple[PredictionResult, ...]:
     """Score candidates in input order, including movies outside a model catalog."""
-    return tuple(predict_one(profile, movie, config, include_debug) for movie in movies)
+    candidates = tuple(movies)
+    if text_profile is None:
+        return tuple(predict_one(profile, movie, config, include_debug) for movie in candidates)
+    if text_profile.user_id is not None and text_profile.user_id != profile.user_id:
+        raise ValueError("Text profile user must match the taste profile user")
+    return tuple(predict_one(profile, movie, config, include_debug, text_signal=signal)
+                 for movie, signal in zip(candidates, text_profile.signals(candidates), strict=True))
